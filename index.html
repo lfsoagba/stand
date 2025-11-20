@@ -1,242 +1,363 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliação População de Plantas</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Controle de Stande - Soja</title>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f0f0f0;
-        }
+  <!-- manifest (você já informou que criou) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2e7d32">
 
-        h2 {
-            margin-top: 25px;
-        }
+  <style>
+    :root{--bg:#f4f4f4;--card:#fff;--muted:#666;--accent:#2e7d32;--radius:8px;--gap:8px}
+    html,body{height:100%;margin:0}
+    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);padding:18px;color:#111}
+    h1{margin:0 0 14px 0;font-size:20px}
+    .section{background:var(--card);padding:14px;border-radius:var(--radius);margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+    label{display:block;font-weight:600;margin-top:8px}
+    input,select,textarea,button{width:100%;padding:10px;margin-top:6px;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;font-size:15px;background:#fff}
+    textarea{resize:vertical}
+    .linha{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap;margin-top:6px}
+    .linha input{flex:1 1 18%;min-width:64px;padding:8px;text-align:center}
+    .ponto{border:1px solid #e6e6e6;padding:12px;border-radius:8px;margin-top:12px;background:#fafafa}
+    .coord-btn{margin-top:10px;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer}
+    .coord-display{font-size:13px;margin-top:6px;color:#444}
+    .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+    .controls button{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer}
+    .controls .primary{background:var(--accent);color:#fff}
+    .controls .secondary{background:#666;color:#fff}
+    @media(max-width:600px){ .linha input{flex:1 1 48%} .row{flex-direction:column} .controls{flex-direction:column} }
+  </style>
 
-        .box {
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-        }
-
-        input, select, button, textarea {
-            width: 100%;
-            padding: 10px;
-            margin-top: 8px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-
-        button {
-            background: #0066ff;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        button:hover {
-            background: #0044aa;
-        }
-
-        .foto-preview {
-            width: 100%;
-            max-width: 450px;
-            height: auto;
-            margin-top: 10px;
-            border-radius: 10px;
-        }
-    </style>
-
+  <!-- jsPDF (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
+  <h1>Controle de Stande - Soja</h1>
 
-    <h1>Avaliação de População de Plantas</h1>
+  <div class="section">
+    <label>Responsável Técnico</label>
+    <input id="responsavel" placeholder="Nome do responsável técnico" autocomplete="name">
 
-    <div class="box">
-        <h2>Responsável Técnico</h2>
-        <input type="text" id="responsavel" placeholder="Nome do responsável técnico">
-    </div>
+    <label>Talhão</label>
+    <select id="talhao"><option value="">Selecione...</option></select>
 
-    <div class="box">
-        <h2>Talhão</h2>
-        <select id="talhao">
-            <!-- DROPDOWN CORRIGIDO -->
-        </select>
-    </div>
+    <label>Área do talhão (ha)</label>
+    <input id="area" type="number" readonly placeholder="Área preenchida automaticamente">
 
-    <script>
-        // 🔥 LISTA DE TALHÕES QUE VOCÊ JÁ HAVIA INFORMADO
-        const talhoes = [
-            "Talhão 01 - 42,35 ha",
-            "Talhão 02 - 37,10 ha",
-            "Talhão 03 - 28,50 ha",
-            "Talhão 04 - 19,80 ha"
-        ];
+    <label>Espaçamento entre linhas (cm)</label>
+    <input id="espacamento" type="number" value="45" min="5">
 
-        const select = document.getElementById("talhao");
-        talhoes.forEach(t => {
-            const opt = document.createElement("option");
-            opt.value = t;
-            opt.textContent = t;   // <-- AGORA FUNCIONA
-            select.appendChild(opt);
-        });
-    </script>
+    <label>Quantidade de pontos (1 ponto a cada 40 ha)</label>
+    <input id="qtdPontos" type="number" readonly>
+    <div style="font-size:13px;color:var(--muted);margin-top:6px">A área é preenchida automaticamente ao escolher o talhão.</div>
+  </div>
 
-    <div class="box">
-        <h2>Coordenadas</h2>
-        <button onclick="getLocation()">Registrar Coordenada</button>
-        <p id="coord"></p>
-    </div>
+  <div id="pontosContainer"></div>
 
-    <script>
-        let latitude = "";
-        let longitude = "";
+  <div class="section controls">
+    <button class="primary" id="btnCalcPop" onclick="calcularPopulacao()">Calcular População (plants/ha)</button>
+    <button class="secondary" id="btnGerarPdf" onclick="gerarPDF()">Gerar Relatório em PDF</button>
+  </div>
 
-        function getLocation() {
-            if (!navigator.geolocation) {
-                alert("Geolocalização não suportada.");
-                return;
-            }
+  <div class="section">
+    <label>Resultado - População estimada (plants/ha)</label>
+    <input id="resultadoPopulacao" readonly>
+  </div>
 
-            navigator.geolocation.getCurrentPosition(
-                pos => {
-                    latitude = pos.coords.latitude.toFixed(6);
-                    longitude = pos.coords.longitude.toFixed(6);
-                    document.getElementById("coord").innerText =
-                        `Lat: ${latitude} | Lng: ${longitude}`;
-                },
-                err => {
-                    alert("Erro ao obter coordenada: " + err.message);
-                }
-            );
+<script>
+/* ===== dados de talhões (sua planilha) ===== */
+const talhaoAreas = {
+  "XIG.JAI.B01.T01": 101.35,"XIG.JAI.B01.T02": 232.71,"XIG.JAI.B01.T03": 263.19,
+  "XIG.JAI.B02.T04": 182.29,"XIG.JAI.B02.T05": 281.13,"XIG.JAI.B02.T06": 322.21,
+  "XIG.JAI.B03.T07": 289.34,"XIG.JAI.B03.T08": 190.62,"XIG.JAI.B03.T09": 458.33,
+  "XIG.JAI.B04.T10": 249.21,"XIG.JAI.B05.T11": 320.88,"XIG.JAI.B05.T12": 234.11,
+  "XIG.JAI.B05.T13": 181.34,"XIG.JAI.B04.T14": 301.32,"XIG.JAI.B04.T15": 243.86,
+  "XIG.JAI.B04.T16": 179.15,"XIG.JAI.B05.T17": 239.50,"XIG.JAI.B05.T18": 230.99,
+  "XIG.JAI.B05.T19": 105.76,"XIG.JAI.B06.T20": 52.99,"XIG.JAI.B06.T21": 154.06,
+  "XIG.JAI.B06.T22": 91.23,"XIG.MAM.B01.T01": 213.20,"XIG.MAM.B01.T02": 138.12,
+  "XIG.MAM.B01.T03": 209.32,"XIG.MAM.B02.T04": 85.52,"XIG.NSA.B01.T01": 185.81,
+  "XIG.NSA.B01.T02": 162.25,"XIG.NSA.B01.T03": 185.58,"XIG.NSA.B01.T04": 160.22,
+  "XIG.NSA.B01.T05": 269.38,"XIG.NSA.B02.T06": 247.32,"XIG.NSA.B02.T07": 258.16,
+  "XIG.NSA.B02.T08": 342.79,"XIG.NSA.B02.T09": 269.56,"XIG.SO1.B01.T01": 331.02,
+  "XIG.SO1.B01.T02": 298.14,"XIG.SO1.B01.T03": 246.06,"XIG.SO1.B03.T04": 268.74,
+  "XIG.SO1.B03.T05": 200.82,"XIG.SO1.B02.T06": 404.92,"XIG.SO1.B02.T07": 275.67,
+  "XIG.SO2.B01.T01": 189.04,"XIG.SO2.B02.T02": 217.93,"XIG.SO2.B02.T03": 295.56,
+  "XIG.SO2.B01.T04": 346.18,"XIG.SO2.B01.T05": 213.62,"XIG.SO2.B03.T06": 166.29,
+  "XIG.SO2.B03.T07": 303.40,"XIG.STE.B01.T01": 124.68,"XIG.STE.B02.T02": 303.20,
+  "XIG.STE.B03.T03": 300.19,"XIG.STE.B03.T04": 365.53,"XIG.STE.B02.T05": 281.90,
+  "XIG.STE.B02.T06": 180.08
+};
+
+/* ===== popula dropdown de talhões corretamente (sem template strings injetadas) ===== */
+document.addEventListener('DOMContentLoaded', () => {
+  const sel = document.getElementById('talhao');
+  Object.keys(talhaoAreas).forEach(key => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = key; // aqui é texto real — SEM ${t}
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', selecionarArea);
+});
+
+/* ===== seleção de talhão / preenchimento de área ===== */
+function selecionarArea() {
+  const sel = document.getElementById('talhao');
+  const areaField = document.getElementById('area');
+  const val = sel.value;
+  if (val && talhaoAreas[val] !== undefined) areaField.value = talhaoAreas[val];
+  else areaField.value = '';
+  calcularPontos();
+}
+
+/* ===== cálculo de pontos (1 por 40ha) ===== */
+function calcularPontos() {
+  const area = parseFloat(document.getElementById('area').value) || 0;
+  const pontos = Math.max(1, Math.ceil(area / 40));
+  document.getElementById('qtdPontos').value = pontos;
+  gerarPontos(pontos);
+}
+
+/* ===== gera painéis de ponto ===== */
+function gerarPontos(qtd) {
+  const container = document.getElementById('pontosContainer');
+  container.innerHTML = '';
+  for (let i=1;i<=qtd;i++){
+    const div = document.createElement('div');
+    div.className = 'ponto';
+    div.innerHTML = `
+      <h3>Ponto ${i}</h3>
+
+      <label>Contagem de plantas (5 linhas de 5 m)</label>
+      <div class="linha">
+        <input type="number" class="l1" placeholder="Linha 1" inputmode="numeric" min="0">
+        <input type="number" class="l2" placeholder="Linha 2" inputmode="numeric" min="0">
+        <input type="number" class="l3" placeholder="Linha 3" inputmode="numeric" min="0">
+        <input type="number" class="l4" placeholder="Linha 4" inputmode="numeric" min="0">
+        <input type="number" class="l5" placeholder="Linha 5" inputmode="numeric" min="0">
+      </div>
+
+      <label>Média (plantas/m)</label>
+      <input type="text" class="media" readonly>
+
+      <button type="button" class="coord-btn" onclick="registrarCoordenada(this)">Registrar Coordenada (GPS)</button>
+      <div class="coord-display"></div>
+
+      <label>Fotos (máx 5 / 10MB cada)</label>
+      <input type="file" class="fotos" accept="image/*" multiple>
+
+      <label>Observações - Daninhas</label>
+      <textarea class="obs-dan" rows="2"></textarea>
+
+      <label>Observações - Pragas & Doenças</label>
+      <textarea class="obs-prag" rows="2"></textarea>
+
+      <label>Observações - Nódulos</label>
+      <textarea class="obs-nod" rows="2"></textarea>
+    `;
+    container.appendChild(div);
+
+    // add listeners para atualizar a média quando mudar qualquer input de linha
+    const lineInputs = div.querySelectorAll('.linha input');
+    lineInputs.forEach(inp => inp.addEventListener('input', ()=> atualizarMedia(div)));
+  }
+}
+
+/* ===== atualiza média (1 casa decimal) ===== */
+function atualizarMedia(div) {
+  const values = Array.from(div.querySelectorAll('.linha input')).map(i => Number(i.value) || 0);
+  const sum = values.reduce((a,b)=>a+b,0);
+  const media = sum / 25; // 5 linhas x 5 m = 25 m
+  div.querySelector('.media').value = media.toFixed(1); // 1 casa decimal
+}
+
+/* ===== registra coordenada (GPS) ===== */
+function registrarCoordenada(btn) {
+  const display = btn.parentElement.querySelector('.coord-display');
+  if (!navigator.geolocation) { alert('Geolocalização não suportada'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      display.textContent = `Lat: ${pos.coords.latitude.toFixed(6)}, Lon: ${pos.coords.longitude.toFixed(6)}`;
+    },
+    err => { alert('Erro ao obter coordenada: ' + (err.message || err.code)); },
+    { enableHighAccuracy:true, timeout:10000 }
+  );
+}
+
+/* ===== valida fotos (limites) ===== */
+function validarFotos(input) {
+  const files = input.files;
+  if (!files) return;
+  if (files.length > 5) { alert('Máx 5 fotos por ponto'); input.value=''; return; }
+  for (const f of files) if (f.size > 10*1024*1024){ alert('Cada foto deve ter até 10MB'); input.value=''; return; }
+}
+
+/* ===== coleta todas as médias (usada no cálculo de população) ===== */
+function coletarMedias() {
+  const pontos = Array.from(document.querySelectorAll('.ponto'));
+  return pontos.map(p => {
+    const m = parseFloat(p.querySelector('.media').value);
+    return isNaN(m) ? null : m;
+  });
+}
+
+/* ===== calcula população por ha ===== */
+function calcularPopulacao() {
+  const medias = coletarMedias();
+  if (medias.length === 0) { alert('Nenhum ponto criado'); return; }
+  if (medias.some(m=>m===null)) { alert('Preencha as contagens em todos os pontos antes de calcular'); return; }
+  const soma = medias.reduce((a,b)=>a+b,0);
+  const mediaGeral = soma / medias.length;
+  const esp_cm = parseFloat(document.getElementById('espacamento').value) || 45;
+  const esp_m = esp_cm / 100;
+  const popHa = mediaGeral * (10000 / esp_m);
+  document.getElementById('resultadoPopulacao').value = Math.round(popHa);
+  return popHa;
+}
+
+/* ===== util: converte File -> DataURL (redimensiona via canvas mantendo proporção) ===== */
+function fileToDataURL(file, maxSide=1200) {
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload = ()=> {
+      const img=new Image();
+      img.onload = ()=>{
+        let w=img.width, h=img.height;
+        if (Math.max(w,h) > maxSide) {
+          const ratio = maxSide / Math.max(w,h);
+          w = Math.round(w*ratio);
+          h = Math.round(h*ratio);
         }
-    </script>
+        const c=document.createElement('canvas');
+        c.width=w; c.height=h;
+        const ctx=c.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',0.85));
+      };
+      img.onerror = reject;
+      img.src = fr.result;
+    };
+    fr.onerror = reject;
+    fr.readAsDataURL(file);
+  });
+}
 
-    <div class="box">
-        <h2>Contagem de Plantas (5 linhas × 5 m)</h2>
+/* ===== gera PDF (média já com 1 casa decimal; inclui contagens; imagens com proporção) ===== */
+async function gerarPDF() {
+  // checar jsPDF
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    alert('jsPDF não carregado. Conecte-se à internet ou gere JSON offline.');
+    return;
+  }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p','mm','a4');
+  let y=12;
+  doc.setFontSize(14);
+  doc.text('Relatório - Controle de Stande (Soja)', 14, y); y+=8;
+  doc.setFontSize(10);
+  doc.text(`Responsável: ${document.getElementById('responsavel').value || '-'}`, 14, y); y+=6;
+  doc.text(`Talhão: ${document.getElementById('talhao').value || '-'}`, 14, y); y+=6;
+  doc.text(`Área (ha): ${document.getElementById('area').value || '-'}`, 14, y); y+=8;
+  doc.text(`Espaçamento (cm): ${document.getElementById('espacamento').value || '45'}`, 14, y); y+=10;
 
-        <div id="inputs"></div>
+  const pontos = Array.from(document.querySelectorAll('.ponto'));
+  for (let idx=0; idx<pontos.length; idx++){
+    const p = pontos[idx];
+    doc.setFontSize(12);
+    doc.text(`Ponto ${idx+1}`, 14, y); y+=6;
 
-        <button onclick="adicionarPonto()">Adicionar Ponto</button>
+    // contagens das 5 linhas
+    const l1 = p.querySelector('.l1').value || '0';
+    const l2 = p.querySelector('.l2').value || '0';
+    const l3 = p.querySelector('.l3').value || '0';
+    const l4 = p.querySelector('.l4').value || '0';
+    const l5 = p.querySelector('.l5').value || '0';
 
-        <h3>Médias dos Pontos</h3>
-        <div id="resultados"></div>
-    </div>
+    doc.setFontSize(10);
+    doc.text(`Linha 1: ${l1}`, 14, y); y+=5;
+    doc.text(`Linha 2: ${l2}`, 14, y); y+=5;
+    doc.text(`Linha 3: ${l3}`, 14, y); y+=5;
+    doc.text(`Linha 4: ${l4}`, 14, y); y+=5;
+    doc.text(`Linha 5: ${l5}`, 14, y); y+=7;
 
-    <script>
-        let pontos = [];
-        let pontoIndex = 1;
+    // média com 1 casa decimal (já mostrada no site)
+    const mediaStr = p.querySelector('.media').value || '0.0';
+    doc.text(`Média (pl/m): ${parseFloat(mediaStr).toFixed(1)}`, 14, y); y+=7;
 
-        function adicionarPonto() {
-            let linhas = [];
+    // coordenada
+    const coord = p.querySelector('.coord-display').textContent || 'Não registrada';
+    doc.text(`Coordenadas: ${coord}`, 14, y); y+=7;
 
-            for (let i = 1; i <= 5; i++) {
-                let valor = parseInt(document.getElementById("linha" + i)?.value || 0);
-                linhas.push(valor);
-            }
+    // observações
+    const obsDan = p.querySelector('.obs-dan').value || '-';
+    const obsPrag = p.querySelector('.obs-prag').value || '-';
+    const obsNod = p.querySelector('.obs-nod').value || '-';
+    doc.text(`Daninhas: ${truncateForPdf(obsDan)}`, 14, y); y+=6;
+    doc.text(`Pragas/Doenças: ${truncateForPdf(obsPrag)}`, 14, y); y+=6;
+    doc.text(`Nódulos: ${truncateForPdf(obsNod)}`, 14, y); y+=8;
 
-            let soma = linhas.reduce((a, b) => a + b, 0);
-            let media = soma / 25; // 5 linhas × 5 metros
-
-            media = media.toFixed(1); // 🔥 AGORA APENAS 1 CASA DECIMAL
-
-            pontos.push({
-                ponto: pontoIndex++,
-                linhas: linhas,
-                media: media
-            });
-
-            atualizarResultados();
+    // fotos: adicionar mantendo proporção
+    const inputFotos = p.querySelector('.fotos');
+    if (inputFotos && inputFotos.files && inputFotos.files.length) {
+      for (let f of inputFotos.files) {
+        try {
+          const dataUrl = await fileToDataURL(f, 1200); // já redimensiona mantendo proporção
+          // calcular w,h para doc (mm) considerando 72dpi default: use width in px to mm conversion approx:
+          // jsPDF addImage accepts width/height in mm directly; we'll fit max width 180mm, max height 120mm preserving aspect.
+          // create Image object to read dimensions
+          const img = await dataUrlToImage(dataUrl);
+          const maxW = 180; // mm on page
+          const maxH = 120;
+          // convert px->mm: assume 96 dpi: mm = px * 25.4 / 96
+          const pxToMm = px => (px * 25.4) / 96;
+          let wmm = pxToMm(img.width);
+          let hmm = pxToMm(img.height);
+          const ratio = Math.min(maxW / wmm, maxH / hmm, 1);
+          wmm = wmm * ratio;
+          hmm = hmm * ratio;
+          if (y + hmm > 285) { doc.addPage(); y = 12; }
+          doc.addImage(dataUrl, 'JPEG', 14, y, wmm, hmm);
+          y += hmm + 8;
+        } catch(e){
+          // se erro ao processar imagem, ignora e continua
+          console.error('Erro imagem PDF', e);
         }
+        if (y > 270) { doc.addPage(); y = 12; }
+      }
+    }
 
-        function atualizarResultados() {
-            let html = "";
+    if (y > 260) { doc.addPage(); y = 12; }
+  }
 
-            pontos.forEach(p => {
-                html += `<p><b>Ponto ${p.ponto}:</b> ${p.media} plantas/m</p>`;
-            });
+  // salva
+  const nome = `relatorio_stande_${(document.getElementById('talhao').value || 'sem_talhao')}_${(new Date()).toISOString().slice(0,10)}.pdf`;
+  doc.save(nome);
+}
 
-            document.getElementById("resultados").innerHTML = html;
-        }
+/* util para truncar strings longas no PDF */
+function truncateForPdf(str, max=100) {
+  if (!str) return '-';
+  return (str.length > max) ? (str.slice(0,max) + '...') : str;
+}
 
-        // Criar inputs
-        let htmlInputs = "";
-        for (let i = 1; i <= 5; i++) {
-            htmlInputs += `
-                <input type="number" id="linha${i}" placeholder="Linha ${i}">
-            `;
-        }
-        document.getElementById("inputs").innerHTML = htmlInputs;
-    </script>
+/* util: dataURL -> Image object */
+function dataUrlToImage(dataUrl) {
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
 
-    <div class="box">
-        <h2>Fotos</h2>
-        <input type="file" id="foto" accept="image/*" onchange="previewFoto()">
-        <img id="preview" class="foto-preview">
-    </div>
-
-    <script>
-        let fotoBase64 = "";
-
-        function previewFoto() {
-            const file = document.getElementById("foto").files[0];
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                fotoBase64 = e.target.result;
-                document.getElementById("preview").src = fotoBase64;
-            };
-
-            reader.readAsDataURL(file);
-        }
-    </script>
-
-    <button onclick="gerarPDF()">Gerar Relatório em PDF</button>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <script>
-        async function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
-
-            pdf.setFontSize(16);
-            pdf.text("Relatório de População de Plantas", 10, 10);
-
-            pdf.setFontSize(12);
-            pdf.text("Responsável Técnico: " + document.getElementById("responsavel").value, 10, 20);
-            pdf.text("Talhão: " + document.getElementById("talhao").value, 10, 30);
-
-            if (latitude !== "") {
-                pdf.text(`Coordenadas: ${latitude}, ${longitude}`, 10, 40);
-            }
-
-            pdf.text("Resultados dos Pontos:", 10, 55);
-
-            let y = 65;
-
-            pontos.forEach(p => {
-                pdf.text(`Ponto ${p.ponto} - Média: ${p.media} plantas/m`, 10, y);
-                y += 6;
-
-                // 🔥 AGORA MOSTRA AS CONTAGENS NO PDF
-                pdf.text(`Linhas: ${p.linhas.join(", ")}`, 10, y);
-                y += 8;
-            });
-
-            if (fotoBase64 !== "") {
-                pdf.addImage(fotoBase64, "JPEG", 10, y, 120, 0); // 🔥 PROPORÇÃO NATURAL (altura automática)
-            }
-
-            pdf.save("relatorio_populacao.pdf");
-        }
-    </script>
-
+/* ===== registrar service worker (se existir) ===== */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker?.register('service-worker.js')
+    .then(()=> console.log('Service Worker registrado'))
+    .catch(e=> console.warn('Falha SW:', e));
+}
+</script>
 </body>
 </html>
