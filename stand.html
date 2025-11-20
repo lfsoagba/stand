@@ -137,9 +137,66 @@
 
   <div class="section">
     <label>Talhão</label>
-    <input type="text" id="talhao" />
+    <select id="talhao" onchange="selecionarArea()">
+      <option value="">Selecione...</option>
+      <option value="XIG.JAI.B01.T01">XIG.JAI.B01.T01</option>
+      <option value="XIG.JAI.B01.T02">XIG.JAI.B01.T02</option>
+      <option value="XIG.JAI.B01.T03">XIG.JAI.B01.T03</option>
+      <option value="XIG.JAI.B02.T04">XIG.JAI.B02.T04</option>
+      <option value="XIG.JAI.B02.T05">XIG.JAI.B02.T05</option>
+      <option value="XIG.JAI.B02.T06">XIG.JAI.B02.T06</option>
+      <option value="XIG.JAI.B03.T07">XIG.JAI.B03.T07</option>
+      <option value="XIG.JAI.B03.T08">XIG.JAI.B03.T08</option>
+      <option value="XIG.JAI.B03.T09">XIG.JAI.B03.T09</option>
+      <option value="XIG.JAI.B04.T10">XIG.JAI.B04.T10</option>
+      <option value="XIG.JAI.B05.T11">XIG.JAI.B05.T11</option>
+      <option value="XIG.JAI.B05.T12">XIG.JAI.B05.T12</option>
+      <option value="XIG.JAI.B05.T13">XIG.JAI.B05.T13</option>
+      <option value="XIG.JAI.B04.T14">XIG.JAI.B04.T14</option>
+      <option value="XIG.JAI.B04.T15">XIG.JAI.B04.T15</option>
+      <option value="XIG.JAI.B04.T16">XIG.JAI.B04.T16</option>
+      <option value="XIG.JAI.B05.T17">XIG.JAI.B05.T17</option>
+      <option value="XIG.JAI.B05.T18">XIG.JAI.B05.T18</option>
+      <option value="XIG.JAI.B05.T19">XIG.JAI.B05.T19</option>
+      <option value="XIG.JAI.B06.T20">XIG.JAI.B06.T20</option>
+      <option value="XIG.JAI.B06.T21">XIG.JAI.B06.T21</option>
+      <option value="XIG.JAI.B06.T22">XIG.JAI.B06.T22</option>
+      <option value="XIG.MAM.B01.T01">XIG.MAM.B01.T01</option>
+      <option value="XIG.MAM.B01.T02">XIG.MAM.B01.T02</option>
+      <option value="XIG.MAM.B01.T03">XIG.MAM.B01.T03</option>
+      <option value="XIG.MAM.B02.T04">XIG.MAM.B02.T04</option>
+      <option value="XIG.NSA.B01.T01">XIG.NSA.B01.T01</option>
+      <option value="XIG.NSA.B01.T02">XIG.NSA.B01.T02</option>
+      <option value="XIG.NSA.B01.T03">XIG.NSA.B01.T03</option>
+      <option value="XIG.NSA.B01.T04">XIG.NSA.B01.T04</option>
+      <option value="XIG.NSA.B01.T05">XIG.NSA.B01.T05</option>
+      <option value="XIG.NSA.B02.T06">XIG.NSA.B02.T06</option>
+      <option value="XIG.NSA.B02.T07">XIG.NSA.B02.T07</option>
+      <option value="XIG.NSA.B02.T08">XIG.NSA.B02.T08</option>
+      <option value="XIG.NSA.B02.T09">XIG.NSA.B02.T09</option>
+      <option value="XIG.SO1.B01.T01">XIG.SO1.B01.T01</option>
+      <option value="XIG.SO1.B01.T02">XIG.SO1.B01.T02</option>
+      <option value="XIG.SO1.B01.T03">XIG.SO1.B01.T03</option>
+      <option value="XIG.SO1.B03.T04">XIG.SO1.B03.T04</option>
+      <option value="XIG.SO1.B03.T05">XIG.SO1.B03.T05</option>
+      <option value="XIG.SO1.B02.T06">XIG.SO1.B02.T06</option>
+      <option value="XIG.SO1.B02.T07">XIG.SO1.B02.T07</option>
+      <option value="XIG.SO2.B01.T01">XIG.SO2.B01.T01</option>
+      <option value="XIG.SO2.B02.T02">XIG.SO2.B02.T02</option>
+      <option value="XIG.SO2.B02.T03">XIG.SO2.B02.T03</option>
+      <option value="XIG.SO2.B01.T04">XIG.SO2.B01.T04</option>
+      <option value="XIG.SO2.B01.T05">XIG.SO2.B01.T05</option>
+      <option value="XIG.SO2.B03.T06">XIG.SO2.B03.T06</option>
+      <option value="XIG.SO2.B03.T07">XIG.SO2.B03.T07</option>
+      <option value="XIG.STE.B01.T01">XIG.STE.B01.T01</option>
+      <option value="XIG.STE.B02.T02">XIG.STE.B02.T02</option>
+      <option value="XIG.STE.B03.T03">XIG.STE.B03.T03</option>
+      <option value="XIG.STE.B03.T04">XIG.STE.B03.T04</option>
+      <option value="XIG.STE.B02.T05">XIG.STE.B02.T05</option>
+      <option value="XIG.STE.B02.T06">XIG.STE.B02.T06</option>
+    </select>
 
-    <label>Área do talhão (ha)</label>
+    <label>Área do talhão (ha)</label> (ha)</label>
     <input type="number" id="area" oninput="calcularPontos()" />
 
     <label>Quantidade de pontos a serem avaliados</label>
