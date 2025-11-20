@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Stande - Soja</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { margin-top: 30px; }
+    .section { background: #fff; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+    .ponto { border: 1px solid #ccc; padding: 15px; border-radius: 10px; margin-top: 20px; background: #fafafa; }
+    .linha { display: flex; gap: 10px; margin-top: 10px; }
+    .linha input { flex: 1; }
+  </style>
+  <script>
+    const talhaoAreas = {
+      "XIG.JAI.B01.T01": 101.35,
+      "XIG.JAI.B01.T02": 232.71,
+      "XIG.JAI.B01.T03": 263.19,
+      "XIG.JAI.B02.T04": 182.29,
+      "XIG.JAI.B02.T05": 281.13,
+      "XIG.JAI.B02.T06": 322.21,
+      "XIG.JAI.B03.T07": 289.34,
+      "XIG.JAI.B03.T08": 190.62,
+      "XIG.JAI.B03.T09": 458.33,
+      "XIG.JAI.B04.T10": 249.21,
+      "XIG.JAI.B05.T11": 320.88,
+      "XIG.JAI.B05.T12": 234.11,
+      "XIG.JAI.B05.T13": 181.34,
+      "XIG.JAI.B04.T14": 301.32,
+      "XIG.JAI.B04.T15": 243.86,
+      "XIG.JAI.B04.T16": 179.15,
+      "XIG.JAI.B05.T17": 239.50,
+      "XIG.JAI.B05.T18": 230.99,
+      "XIG.JAI.B05.T19": 105.76,
+      "XIG.JAI.B06.T20": 52.99,
+      "XIG.JAI.B06.T21": 154.06,
+      "XIG.JAI.B06.T22": 91.23,
+      "XIG.MAM.B01.T01": 213.20,
+      "XIG.MAM.B01.T02": 138.12,
+      "XIG.MAM.B01.T03": 209.32,
+      "XIG.MAM.B02.T04": 85.52,
+      "XIG.NSA.B01.T01": 185.81,
+      "XIG.NSA.B01.T02": 162.25,
+      "XIG.NSA.B01.T03": 185.58,
+      "XIG.NSA.B01.T04": 160.22,
+      "XIG.NSA.B01.T05": 269.38,
+      "XIG.NSA.B02.T06": 247.32,
+      "XIG.NSA.B02.T07": 258.16,
+      "XIG.NSA.B02.T08": 342.79,
+      "XIG.NSA.B02.T09": 269.56,
+      "XIG.SO1.B01.T01": 331.02,
+      "XIG.SO1.B01.T02": 298.14,
+      "XIG.SO1.B01.T03": 246.06,
+      "XIG.SO1.B03.T04": 268.74,
+      "XIG.SO1.B03.T05": 200.82,
+      "XIG.SO1.B02.T06": 404.92,
+      "XIG.SO1.B02.T07": 275.67,
+      "XIG.SO2.B01.T01": 189.04,
+      "XIG.SO2.B02.T02": 217.93,
+      "XIG.SO2.B02.T03": 295.56,
+      "XIG.SO2.B01.T04": 346.18,
+      "XIG.SO2.B01.T05": 213.62,
+      "XIG.SO2.B03.T06": 166.29,
+      "XIG.SO2.B03.T07": 303.40,
+      "XIG.STE.B01.T01": 124.68,
+      "XIG.STE.B02.T02": 303.20,
+      "XIG.STE.B03.T03": 300.19,
+      "XIG.STE.B03.T04": 365.53,
+      "XIG.STE.B02.T05": 281.90,
+      "XIG.STE.B02.T06": 180.08
+    };
+
+    function selecionarArea() {
+      const t = document.getElementById('talhao').value;
+      if (talhaoAreas[t] !== undefined) {
+        document.getElementById('area').value = talhaoAreas[t];
+        calcularPontos();
+      }
+    }
+
+    function calcularPontos() {
+      const area = parseFloat(document.getElementById('area').value) || 0;
+      const pontos = Math.max(1, Math.ceil(area / 40));
+      document.getElementById('qtdPontos').value = pontos;
+      gerarPontos(pontos);
+    }
+
+    function gerarPontos(qtd) {
+      const container = document.getElementById('pontosContainer');
+      container.innerHTML = '';
+      for (let i = 1; i <= qtd; i++) {
+        const div = document.createElement('div');
+        div.className = 'ponto';
+        div.innerHTML = `
+          <h3>Ponto ${i}</h3>
+          <label>Contagem de plantas (5 linhas de 5 metros)</label>
+          <div class=\"linha\">
+            <input type=\"number\" placeholder=\"Linha 1\" />
+            <input type=\"number\" placeholder=\"Linha 2\" />
+            <input type=\"number\" placeholder=\"Linha 3\" />
+            <input type=\"number\" placeholder=\"Linha 4\" />
+            <input type=\"number\" placeholder=\"Linha 5\" />
+          </div>
+          <label>Fotos (máx. 5 / até 10MB cada)</label>
+          <input type=\"file\" accept=\"image/*\" multiple onchange=\"validarFotos(this)\" />
+          <label>Observações - Daninhas</label>
+          <textarea rows=\"3\"></textarea>
+          <label>Observações - Pragas e Doenças</label>
+          <textarea rows=\"3\"></textarea>
+          <label>Observações - Nódulos</label>
+          <textarea rows=\"3\"></textarea>`;
+        container.appendChild(div);
+      }
+    }
+
+    function validarFotos(input) {
+      if (input.files.length > 5) {
+        alert('Máximo de 5 fotos');
+        input.value = '';
+        return;
+      }
+      for (let f of input.files) {
+        if (f.size > 10 * 1024 * 1024) {
+          alert('Cada foto deve ter no máximo 10MB');
+          input.value = '';
+          return;
+        }
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>Formulário de Controle de Stande - Soja</h1>
+
+  <div class="section">
+    <label>Talhão</label>
+    <input type="text" id="talhao" />
+
+    <label>Área do talhão (ha)</label>
+    <input type="number" id="area" oninput="calcularPontos()" />
+
+    <label>Quantidade de pontos a serem avaliados</label>
+    <input type="number" id="qtdPontos" readonly />
+  </div>
+
+  <div id="pontosContainer"></div>
+</body>
+</html>
