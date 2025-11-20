@@ -4,21 +4,48 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Controle de Stande - Soja</title>
+
+  <!-- Manifest (você disse que já criou manifest.json) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2e7d32">
+
   <style>
-    body { font-family: Arial, sans-serif; padding: 18px; background:#f4f4f4; color:#222; }
-    .section { background:#fff; padding:16px; border-radius:8px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.08);}
-    label{display:block; font-weight:600; margin-top:8px;}
-    input, select, textarea, button { width:100%; padding:8px; margin-top:6px; box-sizing:border-box; }
-    .linha{display:flex; gap:8px;}
-    .linha input{flex:1;}
-    .ponto{border:1px solid #ddd; padding:12px; border-radius:8px; margin-top:12px; background:#fcfcfc;}
+    :root{
+      --bg:#f4f4f4;
+      --card:#fff;
+      --muted:#555;
+      --accent:#2e7d32;
+      --radius:8px;
+      --gap:8px;
+    }
+    html,body{height:100%}
+    body { font-family: Arial, sans-serif; padding:18px; background:var(--bg); color:#222; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    h1{margin:0 0 12px 0; font-size:20px}
+    .section { background:var(--card); padding:16px; border-radius:var(--radius); margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+    label{display:block; font-weight:600; margin-top:8px; font-size:13px}
+    input, select, textarea, button { width:100%; padding:10px; margin-top:6px; box-sizing:border-box; font-size:15px; border:1px solid #ddd; border-radius:6px; background:#fff; color:#111; }
+    textarea{resize:vertical}
+    .linha{display:flex; gap:var(--gap); margin-top:6px; align-items:center; flex-wrap:wrap;}
+    /* cada input das 5 linhas: responsivo */
+    .linha input{ flex:1 1 18%; min-width:64px; padding:10px; text-align:center; }
+    .ponto{border:1px solid #e6e6e6; padding:12px; border-radius:8px; margin-top:12px; background:#fcfcfc;}
     .small{width:auto; display:inline-block;}
-    .row { display:flex; gap:8px; }
-    .row .col { flex:1; }
-    .controls { display:flex; gap:8px; margin-top:12px; }
-    .controls button { flex:1; }
-    .note { font-size:0.9em; color:#555; margin-top:6px; }
+    .row { display:flex; gap:var(--gap); align-items:flex-start; }
+    .row .col { flex:1; min-width:0; } /* important to allow flex children to shrink */
+    .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .controls button { flex:1; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:6px; cursor:pointer; }
+    .controls button.secondary { background:#555; }
+    .note { font-size:0.9em; color:var(--muted); margin-top:6px; }
+    button[type="button"] { cursor:pointer; }
+    /* improve touch targets on mobile */
+    @media (max-width:600px) {
+      input, select, textarea, button { font-size:16px; padding:12px; }
+      .linha input{ flex:1 1 48%; } /* two per row on narrow screens for better visibility */
+      .row { flex-direction:column; }
+      .controls { flex-direction:column; }
+    }
   </style>
+
   <!-- Bibliotecas para gerar PDF (se estiver offline, esses scripts podem não carregar) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
@@ -28,7 +55,7 @@
 
   <div class="section">
     <label>Responsável Técnico</label>
-    <input id="responsavel" placeholder="Nome do responsável técnico" />
+    <input id="responsavel" placeholder="Nome do responsável técnico" autocomplete="name" />
 
     <label>Talhão</label>
     <select id="talhao"><option value="">Selecione...</option></select>
@@ -48,7 +75,7 @@
 
   <div class="section controls">
     <button id="btnCalcPop" onclick="calcularPopulacao()">Calcular População (plants/ha)</button>
-    <button id="btnGerarPdf" onclick="gerarPDF()">Gerar Relatório em PDF</button>
+    <button id="btnGerarPdf" onclick="gerarPDF()" class="secondary">Gerar Relatório em PDF</button>
   </div>
 
   <div class="section">
@@ -133,11 +160,11 @@ function gerarPontos(qtd) {
         <div class="col">
           <label>Contagem de plantas (5 linhas de 5 m)</label>
           <div class="linha">
-            <input id="l1_${i}" type="number" placeholder="L1" min="0" oninput="calcularMedia(${i})">
-            <input id="l2_${i}" type="number" placeholder="L2" min="0" oninput="calcularMedia(${i})">
-            <input id="l3_${i}" type="number" placeholder="L3" min="0" oninput="calcularMedia(${i})">
-            <input id="l4_${i}" type="number" placeholder="L4" min="0" oninput="calcularMedia(${i})">
-            <input id="l5_${i}" type="number" placeholder="L5" min="0" oninput="calcularMedia(${i})">
+            <input id="l1_${i}" type="number" inputmode="numeric" placeholder="L1" min="0" oninput="calcularMedia(${i})">
+            <input id="l2_${i}" type="number" inputmode="numeric" placeholder="L2" min="0" oninput="calcularMedia(${i})">
+            <input id="l3_${i}" type="number" inputmode="numeric" placeholder="L3" min="0" oninput="calcularMedia(${i})">
+            <input id="l4_${i}" type="number" inputmode="numeric" placeholder="L4" min="0" oninput="calcularMedia(${i})">
+            <input id="l5_${i}" type="number" inputmode="numeric" placeholder="L5" min="0" oninput="calcularMedia(${i})">
           </div>
           <label>Média por metro linear (plantas/m)</label>
           <input id="media_${i}" readonly>
@@ -291,10 +318,7 @@ async function gerarPDF() {
   try {
     const dados = await coletarDadosRelatorio();
 
-    if (typeof window.jspdf === 'undefined' && typeof window.jspdf === 'undefined' && !window.jspdf) {
-      // libs não carregadas? tenta usar import via window.jspdf (ESM) ou alert
-    }
-    // ui feedback
+    // ui feedback - checa se jsPDF está disponível (CDN)
     const hasJsPDF = (window.jspdf && window.jspdf.jsPDF) || (window.jspdf !== undefined);
     if (!hasJsPDF) {
       return alert('Biblioteca jsPDF não carregada. Conecte o dispositivo à internet OU exporte os dados como JSON para gerar PDF em outro momento.');
@@ -376,5 +400,15 @@ function exportarJSON() {
   });
 }
 </script>
+
+<!-- Registro do service worker (você já criou service-worker.js separadamente) -->
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service Worker registrado. App disponível para instalação."))
+      .catch(err => console.error("Erro no registro do Service Worker:", err));
+  }
+</script>
+
 </body>
 </html>
