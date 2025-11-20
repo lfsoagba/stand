@@ -30,62 +30,25 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script>
-    // Áreas dos talhões
     const talhaoAreas = {
-      "XIG.JAI.B01.T01": 101.35,
-      "XIG.JAI.B01.T02": 232.71,
-      "XIG.JAI.B01.T03": 263.19,
-      "XIG.JAI.B02.T04": 182.29,
-      "XIG.JAI.B02.T05": 281.13,
-      "XIG.JAI.B02.T06": 322.21,
-      "XIG.JAI.B03.T07": 289.34,
-      "XIG.JAI.B03.T08": 190.62,
-      "XIG.JAI.B03.T09": 458.33,
-      "XIG.JAI.B04.T10": 249.21,
-      "XIG.JAI.B05.T11": 320.88,
-      "XIG.JAI.B05.T12": 234.11,
-      "XIG.JAI.B05.T13": 181.34,
-      "XIG.JAI.B04.T14": 301.32,
-      "XIG.JAI.B04.T15": 243.86,
-      "XIG.JAI.B04.T16": 179.15,
-      "XIG.JAI.B05.T17": 239.50,
-      "XIG.JAI.B05.T18": 230.99,
-      "XIG.JAI.B05.T19": 105.76,
-      "XIG.JAI.B06.T20": 52.99,
-      "XIG.JAI.B06.T21": 154.06,
-      "XIG.JAI.B06.T22": 91.23,
-      "XIG.MAM.B01.T01": 213.20,
-      "XIG.MAM.B01.T02": 138.12,
-      "XIG.MAM.B01.T03": 209.32,
-      "XIG.MAM.B02.T04": 85.52,
-      "XIG.NSA.B01.T01": 185.81,
-      "XIG.NSA.B01.T02": 162.25,
-      "XIG.NSA.B01.T03": 185.58,
-      "XIG.NSA.B01.T04": 160.22,
-      "XIG.NSA.B01.T05": 269.38,
-      "XIG.NSA.B02.T06": 247.32,
-      "XIG.NSA.B02.T07": 258.16,
-      "XIG.NSA.B02.T08": 342.79,
-      "XIG.NSA.B02.T09": 269.56,
-      "XIG.SO1.B01.T01": 331.02,
-      "XIG.SO1.B01.T02": 298.14,
-      "XIG.SO1.B01.T03": 246.06,
-      "XIG.SO1.B03.T04": 268.74,
-      "XIG.SO1.B03.T05": 200.82,
-      "XIG.SO1.B02.T06": 404.92,
-      "XIG.SO1.B02.T07": 275.67,
-      "XIG.SO2.B01.T01": 189.04,
-      "XIG.SO2.B02.T02": 217.93,
-      "XIG.SO2.B02.T03": 295.56,
-      "XIG.SO2.B01.T04": 346.18,
-      "XIG.SO2.B01.T05": 213.62,
-      "XIG.SO2.B03.T06": 166.29,
-      "XIG.SO2.B03.T07": 303.40,
-      "XIG.STE.B01.T01": 124.68,
-      "XIG.STE.B02.T02": 303.20,
-      "XIG.STE.B03.T03": 300.19,
-      "XIG.STE.B03.T04": 365.53,
-      "XIG.STE.B02.T05": 281.90,
+      "XIG.JAI.B01.T01": 101.35, "XIG.JAI.B01.T02": 232.71, "XIG.JAI.B01.T03": 263.19,
+      "XIG.JAI.B02.T04": 182.29, "XIG.JAI.B02.T05": 281.13, "XIG.JAI.B02.T06": 322.21,
+      "XIG.JAI.B03.T07": 289.34, "XIG.JAI.B03.T08": 190.62, "XIG.JAI.B03.T09": 458.33,
+      "XIG.JAI.B04.T10": 249.21, "XIG.JAI.B05.T11": 320.88, "XIG.JAI.B05.T12": 234.11,
+      "XIG.JAI.B05.T13": 181.34, "XIG.JAI.B04.T14": 301.32, "XIG.JAI.B04.T15": 243.86,
+      "XIG.JAI.B04.T16": 179.15, "XIG.JAI.B05.T17": 239.50, "XIG.JAI.B05.T18": 230.99,
+      "XIG.JAI.B05.T19": 105.76, "XIG.JAI.B06.T20": 52.99,  "XIG.JAI.B06.T21": 154.06,
+      "XIG.JAI.B06.T22": 91.23,  "XIG.MAM.B01.T01": 213.20, "XIG.MAM.B01.T02": 138.12,
+      "XIG.MAM.B01.T03": 209.32, "XIG.MAM.B02.T04": 85.52,  "XIG.NSA.B01.T01": 185.81,
+      "XIG.NSA.B01.T02": 162.25, "XIG.NSA.B01.T03": 185.58, "XIG.NSA.B01.T04": 160.22,
+      "XIG.NSA.B01.T05": 269.38, "XIG.NSA.B02.T06": 247.32, "XIG.NSA.B02.T07": 258.16,
+      "XIG.NSA.B02.T08": 342.79, "XIG.NSA.B02.T09": 269.56, "XIG.SO1.B01.T01": 331.02,
+      "XIG.SO1.B01.T02": 298.14, "XIG.SO1.B01.T03": 246.06, "XIG.SO1.B03.T04": 268.74,
+      "XIG.SO1.B03.T05": 200.82, "XIG.SO1.B02.T06": 404.92, "XIG.SO1.B02.T07": 275.67,
+      "XIG.SO2.B01.T01": 189.04, "XIG.SO2.B02.T02": 217.93, "XIG.SO2.B02.T03": 295.56,
+      "XIG.SO2.B01.T04": 346.18, "XIG.SO2.B01.T05": 213.62, "XIG.SO2.B03.T06": 166.29,
+      "XIG.SO2.B03.T07": 303.40, "XIG.STE.B01.T01": 124.68, "XIG.STE.B02.T02": 303.20,
+      "XIG.STE.B03.T03": 300.19, "XIG.STE.B03.T04": 365.53, "XIG.STE.B02.T05": 281.90,
       "XIG.STE.B02.T06": 180.08
     };
 
@@ -121,7 +84,7 @@
             <input type="number" class="l2" placeholder="Linha 2">
             <input type="number" class="l3" placeholder="Linha 3">
             <input type="number" class="l4" placeholder="Linha 4">
-            <input type="number" class="l5" placeholder="Linha 5">
+            <input type="number" class="ll5" placeholder="Linha 5">
           </div>
 
           <label>Média plantas/m</label>
@@ -153,9 +116,8 @@
     function atualizarMedia(div) {
       const valores = [...div.querySelectorAll(".linha input")].map(x => Number(x.value) || 0);
       const soma = valores.reduce((a, b) => a + b, 0);
-      const media = soma / 25; // 5 linhas x 5 metros = 25 m
-
-      div.querySelector(".media").value = media.toFixed(1);  // <-- 1 CASA DECIMAL
+      const media = soma / 25; 
+      div.querySelector(".media").value = media.toFixed(1);
     }
 
     function validarFotos(input) {
@@ -206,39 +168,75 @@
 
       const pontos = document.querySelectorAll(".ponto");
 
-      pontos.forEach((p, i) => {
+      for (let i = 0; i < pontos.length; i++) {
+        const p = pontos[i];
+
         doc.setFontSize(14);
-        doc.text(`Ponto ${i + 1}`, 10, y); y += 8;
+        doc.text(`Ponto ${i + 1}`, 10, y); 
+        y += 8;
 
-        // CONTAGEM POR LINHA NO PDF
-        const l1 = p.querySelector(".l1").value || 0;
-        const l2 = p.querySelector(".l2").value || 0;
-        const l3 = p.querySelector(".l3").value || 0;
-        const l4 = p.querySelector(".l4").value || 0;
-        const l5 = p.querySelector(".l5").value || 0;
+        // Valores das 5 linhas
+        const linhas = ["l1","l2","l3","l4","ll5"];
+        for (let x = 0; x < 5; x++) {
+          const v = p.querySelector("." + linhas[x]).value || 0;
+          doc.setFontSize(11);
+          doc.text(`Linha ${x + 1}: ${v}`, 10, y);
+          y += 6;
+        }
 
-        doc.setFontSize(11);
-        doc.text(`Linha 1: ${l1}`, 10, y); y += 6;
-        doc.text(`Linha 2: ${l2}`, 10, y); y += 6;
-        doc.text(`Linha 3: ${l3}`, 10, y); y += 6;
-        doc.text(`Linha 4: ${l4}`, 10, y); y += 6;
-        doc.text(`Linha 5: ${l5}`, 10, y); y += 8;
-
-        // MÉDIA COM 1 CASA DECIMAL
-        const media = p.querySelector(".media").value;
-        doc.text(`Média plantas/m: ${media}`, 10, y); y += 8;
+        doc.text(`Média plantas/m: ${p.querySelector(".media").value}`, 10, y);  
+        y += 8;
 
         const coord = p.querySelector(".coord-display").innerText || "Não registrada";
-        doc.text(`Coordenadas: ${coord}`, 10, y); y += 8;
+        doc.text(`Coordenadas: ${coord}`, 10, y); 
+        y += 8;
 
         doc.text(`Observações - Daninhas: ${p.querySelector(".daninhas").value}`, 10, y); y += 8;
         doc.text(`Observações - Pragas/Doenças: ${p.querySelector(".pragas").value}`, 10, y); y += 8;
         doc.text(`Observações - Nódulos: ${p.querySelector(".nodulos").value}`, 10, y); y += 10;
 
-        if (y > 260) { doc.addPage(); y = 10; }
-      });
+        // Inserção das fotos sem achatar
+        const fotos = p.querySelector(".fotos").files;
+        for (let foto of fotos) {
+          const img = await carregarImagem(foto);
+          const maxW = 180;
+          const maxH = 120;
+
+          let w = img.width;
+          let h = img.height;
+          const ratio = Math.min(maxW / w, maxH / h);
+
+          w *= ratio;
+          h *= ratio;
+
+          if (y + h > 280) {
+            doc.addPage();
+            y = 10;
+          }
+
+          doc.addImage(img, "JPEG", 10, y, w, h);
+          y += h + 10;
+        }
+
+        if (y > 260) {
+          doc.addPage();
+          y = 10;
+        }
+      }
 
       doc.save("relatorio_stande.pdf");
+    }
+
+    function carregarImagem(file) {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     }
   </script>
 </head>
