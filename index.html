@@ -1,414 +1,272 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Controle de Stande - Soja</title>
 
-  <!-- Manifest (você disse que já criou manifest.json) -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2e7d32">
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js");
+    }
+  </script>
 
   <style>
-    :root{
-      --bg:#f4f4f4;
-      --card:#fff;
-      --muted:#555;
-      --accent:#2e7d32;
-      --radius:8px;
-      --gap:8px;
-    }
-    html,body{height:100%}
-    body { font-family: Arial, sans-serif; padding:18px; background:var(--bg); color:#222; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
-    h1{margin:0 0 12px 0; font-size:20px}
-    .section { background:var(--card); padding:16px; border-radius:var(--radius); margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06);}
-    label{display:block; font-weight:600; margin-top:8px; font-size:13px}
-    input, select, textarea, button { width:100%; padding:10px; margin-top:6px; box-sizing:border-box; font-size:15px; border:1px solid #ddd; border-radius:6px; background:#fff; color:#111; }
-    textarea{resize:vertical}
-    .linha{display:flex; gap:var(--gap); margin-top:6px; align-items:center; flex-wrap:wrap;}
-    /* cada input das 5 linhas: responsivo */
-    .linha input{ flex:1 1 18%; min-width:64px; padding:10px; text-align:center; }
-    .ponto{border:1px solid #e6e6e6; padding:12px; border-radius:8px; margin-top:12px; background:#fcfcfc;}
-    .small{width:auto; display:inline-block;}
-    .row { display:flex; gap:var(--gap); align-items:flex-start; }
-    .row .col { flex:1; min-width:0; } /* important to allow flex children to shrink */
-    .controls { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
-    .controls button { flex:1; padding:10px; background:var(--accent); color:#fff; border:none; border-radius:6px; cursor:pointer; }
-    .controls button.secondary { background:#555; }
-    .note { font-size:0.9em; color:var(--muted); margin-top:6px; }
-    button[type="button"] { cursor:pointer; }
-    /* improve touch targets on mobile */
-    @media (max-width:600px) {
-      input, select, textarea, button { font-size:16px; padding:12px; }
-      .linha input{ flex:1 1 48%; } /* two per row on narrow screens for better visibility */
-      .row { flex-direction:column; }
-      .controls { flex-direction:column; }
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { margin-top: 30px; }
+    .section { background: #fff; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+    .ponto { border: 1px solid #ccc; padding: 15px; border-radius: 10px; margin-top: 20px; background: #fafafa; }
+    .linha { display: flex; gap: 10px; margin-top: 10px; }
+    .linha input { flex: 1; }
+    .coord-btn { margin-top: 10px; padding: 8px; background: #0066cc; color: white; border: none; border-radius: 5px; width: 100%; }
+    .coord-display { font-size: 14px; margin-top: 5px; color: #444; }
+    button { margin-top: 20px; padding: 12px; background: green; color: white; border: none; border-radius: 8px; width: 100%; font-size: 18px; }
   </style>
 
-  <!-- Bibliotecas para gerar PDF (se estiver offline, esses scripts podem não carregar) -->
+  <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <script>
+    // Áreas dos talhões
+    const talhaoAreas = {
+      "XIG.JAI.B01.T01": 101.35,
+      "XIG.JAI.B01.T02": 232.71,
+      "XIG.JAI.B01.T03": 263.19,
+      "XIG.JAI.B02.T04": 182.29,
+      "XIG.JAI.B02.T05": 281.13,
+      "XIG.JAI.B02.T06": 322.21,
+      "XIG.JAI.B03.T07": 289.34,
+      "XIG.JAI.B03.T08": 190.62,
+      "XIG.JAI.B03.T09": 458.33,
+      "XIG.JAI.B04.T10": 249.21,
+      "XIG.JAI.B05.T11": 320.88,
+      "XIG.JAI.B05.T12": 234.11,
+      "XIG.JAI.B05.T13": 181.34,
+      "XIG.JAI.B04.T14": 301.32,
+      "XIG.JAI.B04.T15": 243.86,
+      "XIG.JAI.B04.T16": 179.15,
+      "XIG.JAI.B05.T17": 239.50,
+      "XIG.JAI.B05.T18": 230.99,
+      "XIG.JAI.B05.T19": 105.76,
+      "XIG.JAI.B06.T20": 52.99,
+      "XIG.JAI.B06.T21": 154.06,
+      "XIG.JAI.B06.T22": 91.23,
+      "XIG.MAM.B01.T01": 213.20,
+      "XIG.MAM.B01.T02": 138.12,
+      "XIG.MAM.B01.T03": 209.32,
+      "XIG.MAM.B02.T04": 85.52,
+      "XIG.NSA.B01.T01": 185.81,
+      "XIG.NSA.B01.T02": 162.25,
+      "XIG.NSA.B01.T03": 185.58,
+      "XIG.NSA.B01.T04": 160.22,
+      "XIG.NSA.B01.T05": 269.38,
+      "XIG.NSA.B02.T06": 247.32,
+      "XIG.NSA.B02.T07": 258.16,
+      "XIG.NSA.B02.T08": 342.79,
+      "XIG.NSA.B02.T09": 269.56,
+      "XIG.SO1.B01.T01": 331.02,
+      "XIG.SO1.B01.T02": 298.14,
+      "XIG.SO1.B01.T03": 246.06,
+      "XIG.SO1.B03.T04": 268.74,
+      "XIG.SO1.B03.T05": 200.82,
+      "XIG.SO1.B02.T06": 404.92,
+      "XIG.SO1.B02.T07": 275.67,
+      "XIG.SO2.B01.T01": 189.04,
+      "XIG.SO2.B02.T02": 217.93,
+      "XIG.SO2.B02.T03": 295.56,
+      "XIG.SO2.B01.T04": 346.18,
+      "XIG.SO2.B01.T05": 213.62,
+      "XIG.SO2.B03.T06": 166.29,
+      "XIG.SO2.B03.T07": 303.40,
+      "XIG.STE.B01.T01": 124.68,
+      "XIG.STE.B02.T02": 303.20,
+      "XIG.STE.B03.T03": 300.19,
+      "XIG.STE.B03.T04": 365.53,
+      "XIG.STE.B02.T05": 281.90,
+      "XIG.STE.B02.T06": 180.08
+    };
+
+    function selecionarArea() {
+      const t = document.getElementById('talhao').value;
+      if (talhaoAreas[t] !== undefined) {
+        document.getElementById('area').value = talhaoAreas[t];
+        calcularPontos();
+      }
+    }
+
+    function calcularPontos() {
+      const area = parseFloat(document.getElementById('area').value) || 0;
+      const pontos = Math.max(1, Math.ceil(area / 40));
+      document.getElementById('qtdPontos').value = pontos;
+      gerarPontos(pontos);
+    }
+
+    function gerarPontos(qtd) {
+      const container = document.getElementById('pontosContainer');
+      container.innerHTML = '';
+
+      for (let i = 1; i <= qtd; i++) {
+        const div = document.createElement('div');
+        div.className = 'ponto';
+
+        div.innerHTML = `
+          <h3>Ponto ${i}</h3>
+
+          <label>Contagem de plantas (5 linhas de 5 metros)</label>
+          <div class="linha">
+            <input type="number" class="l1" placeholder="Linha 1">
+            <input type="number" class="l2" placeholder="Linha 2">
+            <input type="number" class="l3" placeholder="Linha 3">
+            <input type="number" class="l4" placeholder="Linha 4">
+            <input type="number" class="l5" placeholder="Linha 5">
+          </div>
+
+          <label>Média plantas/m</label>
+          <input type="text" class="media" readonly>
+
+          <button class="coord-btn" onclick="obterCoordenadas(this)">Registrar Coordenadas</button>
+          <div class="coord-display"></div>
+
+          <label>Fotos (máx. 5 / até 10MB cada)</label>
+          <input type="file" class="fotos" accept="image/*" multiple onchange="validarFotos(this)">
+
+          <label>Observações - Daninhas</label>
+          <textarea rows="3" class="daninhas"></textarea>
+
+          <label>Observações - Pragas e Doenças</label>
+          <textarea rows="3" class="pragas"></textarea>
+
+          <label>Observações - Nódulos</label>
+          <textarea rows="3" class="nodulos"></textarea>
+        `;
+
+        container.appendChild(div);
+
+        const inputs = div.querySelectorAll(".linha input");
+        inputs.forEach(inp => inp.addEventListener("input", () => atualizarMedia(div)));
+      }
+    }
+
+    function atualizarMedia(div) {
+      const valores = [...div.querySelectorAll(".linha input")].map(x => Number(x.value) || 0);
+      const soma = valores.reduce((a, b) => a + b, 0);
+      const media = soma / 25; // 5 linhas x 5 metros = 25 m
+
+      div.querySelector(".media").value = media.toFixed(1);  // <-- 1 CASA DECIMAL
+    }
+
+    function validarFotos(input) {
+      if (input.files.length > 5) {
+        alert('Máximo de 5 fotos');
+        input.value = '';
+        return;
+      }
+      for (let f of input.files) {
+        if (f.size > 10 * 1024 * 1024) {
+          alert('Cada foto deve ter no máximo 10MB');
+          input.value = '';
+          return;
+        }
+      }
+    }
+
+    function obterCoordenadas(btn) {
+      if (!navigator.geolocation) {
+        alert("Geolocalização não suportada.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          btn.parentElement.querySelector(".coord-display").innerText =
+            `Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}`;
+        },
+        err => alert("Erro ao obter coordenada: " + err.message),
+        { enableHighAccuracy: true }
+      );
+    }
+
+    async function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      let y = 10;
+
+      doc.setFontSize(18);
+      doc.text("Relatório de Stande - Soja", 10, y);
+      y += 10;
+
+      doc.setFontSize(12);
+      doc.text(`Responsável técnico: ${document.getElementById("responsavel").value}`, 10, y); y += 8;
+      doc.text(`Talhão: ${document.getElementById("talhao").value}`, 10, y); y += 8;
+      doc.text(`Área (ha): ${document.getElementById("area").value}`, 10, y); y += 10;
+
+      const pontos = document.querySelectorAll(".ponto");
+
+      pontos.forEach((p, i) => {
+        doc.setFontSize(14);
+        doc.text(`Ponto ${i + 1}`, 10, y); y += 8;
+
+        // CONTAGEM POR LINHA NO PDF
+        const l1 = p.querySelector(".l1").value || 0;
+        const l2 = p.querySelector(".l2").value || 0;
+        const l3 = p.querySelector(".l3").value || 0;
+        const l4 = p.querySelector(".l4").value || 0;
+        const l5 = p.querySelector(".l5").value || 0;
+
+        doc.setFontSize(11);
+        doc.text(`Linha 1: ${l1}`, 10, y); y += 6;
+        doc.text(`Linha 2: ${l2}`, 10, y); y += 6;
+        doc.text(`Linha 3: ${l3}`, 10, y); y += 6;
+        doc.text(`Linha 4: ${l4}`, 10, y); y += 6;
+        doc.text(`Linha 5: ${l5}`, 10, y); y += 8;
+
+        // MÉDIA COM 1 CASA DECIMAL
+        const media = p.querySelector(".media").value;
+        doc.text(`Média plantas/m: ${media}`, 10, y); y += 8;
+
+        const coord = p.querySelector(".coord-display").innerText || "Não registrada";
+        doc.text(`Coordenadas: ${coord}`, 10, y); y += 8;
+
+        doc.text(`Observações - Daninhas: ${p.querySelector(".daninhas").value}`, 10, y); y += 8;
+        doc.text(`Observações - Pragas/Doenças: ${p.querySelector(".pragas").value}`, 10, y); y += 8;
+        doc.text(`Observações - Nódulos: ${p.querySelector(".nodulos").value}`, 10, y); y += 10;
+
+        if (y > 260) { doc.addPage(); y = 10; }
+      });
+
+      doc.save("relatorio_stande.pdf");
+    }
+  </script>
 </head>
+
 <body>
-  <h1>Controle de Stande - Soja</h1>
+
+  <h1>Formulário de Controle de Stande - Soja</h1>
 
   <div class="section">
-    <label>Responsável Técnico</label>
-    <input id="responsavel" placeholder="Nome do responsável técnico" autocomplete="name" />
+    <label>Responsável técnico</label>
+    <input type="text" id="responsavel">
 
     <label>Talhão</label>
-    <select id="talhao"><option value="">Selecione...</option></select>
+    <select id="talhao" onchange="selecionarArea()">
+      <option value="">Selecione...</option>
+      ${Object.keys(talhaoAreas).map(t => `<option value="${t}">${t}</option>`).join("")}
+    </select>
 
     <label>Área do talhão (ha)</label>
-    <input id="area" type="number" readonly placeholder="Área preenchida automaticamente" />
+    <input type="number" id="area" readonly>
 
-    <label>Espaçamento entre linhas (cm)</label>
-    <input id="espacamento" type="number" value="45" min="10" />
-
-    <label>Quantidade de pontos (1 ponto a cada 40 ha)</label>
-    <input id="qtdPontos" type="number" readonly />
-    <div class="note">A área é preenchida automaticamente quando escolher o talhão. Não digite a área manualmente.</div>
+    <label>Quantidade de pontos a serem avaliados</label>
+    <input type="number" id="qtdPontos" readonly>
   </div>
 
   <div id="pontosContainer"></div>
 
-  <div class="section controls">
-    <button id="btnCalcPop" onclick="calcularPopulacao()">Calcular População (plants/ha)</button>
-    <button id="btnGerarPdf" onclick="gerarPDF()" class="secondary">Gerar Relatório em PDF</button>
-  </div>
-
-  <div class="section">
-    <label>Resultado - População estimada (plants/ha)</label>
-    <input id="resultadoPopulacao" readonly />
-  </div>
-
-<script>
-/* -----------------------
-   Dados dos talhões (sua planilha)
-   ----------------------- */
-const talhaoAreas = {
-  "XIG.JAI.B01.T01": 101.35,"XIG.JAI.B01.T02": 232.71,"XIG.JAI.B01.T03": 263.19,
-  "XIG.JAI.B02.T04": 182.29,"XIG.JAI.B02.T05": 281.13,"XIG.JAI.B02.T06": 322.21,
-  "XIG.JAI.B03.T07": 289.34,"XIG.JAI.B03.T08": 190.62,"XIG.JAI.B03.T09": 458.33,
-  "XIG.JAI.B04.T10": 249.21,"XIG.JAI.B05.T11": 320.88,"XIG.JAI.B05.T12": 234.11,
-  "XIG.JAI.B05.T13": 181.34,"XIG.JAI.B04.T14": 301.32,"XIG.JAI.B04.T15": 243.86,
-  "XIG.JAI.B04.T16": 179.15,"XIG.JAI.B05.T17": 239.50,"XIG.JAI.B05.T18": 230.99,
-  "XIG.JAI.B05.T19": 105.76,"XIG.JAI.B06.T20": 52.99,"XIG.JAI.B06.T21": 154.06,
-  "XIG.JAI.B06.T22": 91.23,"XIG.MAM.B01.T01": 213.20,"XIG.MAM.B01.T02": 138.12,
-  "XIG.MAM.B01.T03": 209.32,"XIG.MAM.B02.T04": 85.52,"XIG.NSA.B01.T01": 185.81,
-  "XIG.NSA.B01.T02": 162.25,"XIG.NSA.B01.T03": 185.58,"XIG.NSA.B01.T04": 160.22,
-  "XIG.NSA.B01.T05": 269.38,"XIG.NSA.B02.T06": 247.32,"XIG.NSA.B02.T07": 258.16,
-  "XIG.NSA.B02.T08": 342.79,"XIG.NSA.B02.T09": 269.56,"XIG.SO1.B01.T01": 331.02,
-  "XIG.SO1.B01.T02": 298.14,"XIG.SO1.B01.T03": 246.06,"XIG.SO1.B03.T04": 268.74,
-  "XIG.SO1.B03.T05": 200.82,"XIG.SO1.B02.T06": 404.92,"XIG.SO1.B02.T07": 275.67,
-  "XIG.SO2.B01.T01": 189.04,"XIG.SO2.B02.T02": 217.93,"XIG.SO2.B02.T03": 295.56,
-  "XIG.SO2.B01.T04": 346.18,"XIG.SO2.B01.T05": 213.62,"XIG.SO2.B03.T06": 166.29,
-  "XIG.SO2.B03.T07": 303.40,"XIG.STE.B01.T01": 124.68,"XIG.STE.B02.T02": 303.20,
-  "XIG.STE.B03.T03": 300.19,"XIG.STE.B03.T04": 365.53,"XIG.STE.B02.T05": 281.90,
-  "XIG.STE.B02.T06": 180.08
-};
-
-/* Preenche dropdown ao abrir a página */
-window.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('talhao');
-  Object.keys(talhaoAreas).forEach(k => {
-    const o = document.createElement('option');
-    o.value = k; o.textContent = k;
-    sel.appendChild(o);
-  });
-  sel.addEventListener('change', selecionarArea);
-});
-
-/* Quando selecionar talhão: popula área e recalcula pontos */
-function selecionarArea() {
-  const sel = document.getElementById('talhao');
-  const areaField = document.getElementById('area');
-  const v = sel.value;
-  if (v && talhaoAreas[v] !== undefined) {
-    areaField.value = talhaoAreas[v];
-  } else {
-    areaField.value = '';
-  }
-  calcularPontos();
-}
-
-/* Calcula número de pontos (1 por 40 ha) e gera pontos */
-function calcularPontos() {
-  const areaVal = parseFloat(document.getElementById('area').value) || 0;
-  const pontos = Math.max(1, Math.ceil(areaVal / 40));
-  document.getElementById('qtdPontos').value = pontos;
-  gerarPontos(pontos);
-}
-
-/* Gera os painéis de ponto dinamicamente */
-function gerarPontos(qtd) {
-  const container = document.getElementById('pontosContainer');
-  container.innerHTML = '';
-  for (let i = 1; i <= qtd; i++) {
-    const div = document.createElement('div');
-    div.className = 'ponto';
-    div.innerHTML = `
-      <h3>Ponto ${i}</h3>
-
-      <div class="row">
-        <div class="col">
-          <button type="button" onclick="capturarCoordenada(${i})">Registrar Coordenada (GPS)</button>
-          <label>Latitude</label><input id="lat_${i}" readonly>
-          <label>Longitude</label><input id="lon_${i}" readonly>
-        </div>
-        <div class="col">
-          <label>Contagem de plantas (5 linhas de 5 m)</label>
-          <div class="linha">
-            <input id="l1_${i}" type="number" inputmode="numeric" placeholder="L1" min="0" oninput="calcularMedia(${i})">
-            <input id="l2_${i}" type="number" inputmode="numeric" placeholder="L2" min="0" oninput="calcularMedia(${i})">
-            <input id="l3_${i}" type="number" inputmode="numeric" placeholder="L3" min="0" oninput="calcularMedia(${i})">
-            <input id="l4_${i}" type="number" inputmode="numeric" placeholder="L4" min="0" oninput="calcularMedia(${i})">
-            <input id="l5_${i}" type="number" inputmode="numeric" placeholder="L5" min="0" oninput="calcularMedia(${i})">
-          </div>
-          <label>Média por metro linear (plantas/m)</label>
-          <input id="media_${i}" readonly>
-        </div>
-      </div>
-
-      <label>Fotos (máx 5, 10MB cada)</label>
-      <input id="fotos_${i}" type="file" accept="image/*" multiple onchange="validarFotos(this, ${i})">
-
-      <label>Observações - Daninhas</label>
-      <textarea id="obs_dan_${i}" rows="2"></textarea>
-
-      <label>Observações - Pragas & Doenças</label>
-      <textarea id="obs_prag_${i}" rows="2"></textarea>
-
-      <label>Observações - Nódulos (raiz principal e secundária)</label>
-      <textarea id="obs_nod_${i}" rows="2"></textarea>
-    `;
-    container.appendChild(div);
-  }
-}
-
-/* GPS: captura coordenada e preenche campos (pede permissão do navegador) */
-function capturarCoordenada(i) {
-  if (!navigator.geolocation) return alert('Geolocation não suportado pelo navegador.');
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      document.getElementById(`lat_${i}`).value = pos.coords.latitude.toFixed(6);
-      document.getElementById(`lon_${i}`).value = pos.coords.longitude.toFixed(6);
-    },
-    err => {
-      alert('Erro ao obter coordenada: ' + (err.message || err.code));
-    },
-    {enableHighAccuracy:true, timeout:10000}
-  );
-}
-
-/* Valida fotos: máximo 5 e 10MB cada */
-function validarFotos(input, i) {
-  const files = input.files;
-  if (files.length > 5) { alert('Máx 5 fotos por ponto'); input.value = ''; return; }
-  for (let f of files) {
-    if (f.size > 10 * 1024 * 1024) { alert('Cada foto deve ter até 10MB'); input.value = ''; return; }
-  }
-}
-
-/* Calcula média por metro linear para um ponto:
-   soma das 5 linhas ÷ 25 (5 linhas x 5 m = 25 m).
-*/
-function calcularMedia(i) {
-  let soma = 0;
-  for (let k=1;k<=5;k++) soma += Number(document.getElementById(`l${k}_${i}`).value) || 0;
-  const media = soma / 25; // plantas por metro linear
-  document.getElementById(`media_${i}`).value = isFinite(media) ? media.toFixed(3) : '';
-}
-
-/* Retorna array com todas as médias (parseFloat) e verifica se todas preenchidas */
-function coletarMedias() {
-  const qtd = Number(document.getElementById('qtdPontos').value) || 0;
-  const medias = [];
-  for (let i=1;i<=qtd;i++) {
-    const m = parseFloat(document.getElementById(`media_${i}`).value);
-    medias.push(isNaN(m) ? null : m);
-  }
-  return medias;
-}
-
-/* Calcula população por ha:
-   Pop(ha) = média_total_por_metro * (10000 / espaçamento_m)
-*/
-function calcularPopulacao() {
-  const medias = coletarMedias();
-  if (medias.length === 0) return alert('Nenhum ponto criado ainda.');
-  // verificar se todas médias estão preenchidas
-  const faltam = medias.some(m => m === null);
-  if (faltam) return alert('Preencha as contagens de todas as linhas em cada ponto para calcular a população.');
-  // média das médias dos pontos
-  const soma = medias.reduce((a,b)=>a+b,0);
-  const mediaGeral = soma / medias.length;
-  const esp_cm = parseFloat(document.getElementById('espacamento').value) || 45;
-  const esp_m = esp_cm / 100;
-  const popHa = mediaGeral * (10000 / esp_m);
-  document.getElementById('resultadoPopulacao').value = Math.round(popHa);
-  return popHa;
-}
-
-/* Função para coletar todos os dados para o relatório */
-async function coletarDadosRelatorio() {
-  const resp = document.getElementById('responsavel').value || '';
-  const tal = document.getElementById('talhao').value || '';
-  const area = document.getElementById('area').value || '';
-  const esp = document.getElementById('espacamento').value || '';
-  const qtd = Number(document.getElementById('qtdPontos').value) || 0;
-  const pontos = [];
-  for (let i=1;i<=qtd;i++) {
-    const lat = document.getElementById(`lat_${i}`).value || '';
-    const lon = document.getElementById(`lon_${i}`).value || '';
-    const linhas = [];
-    for (let k=1;k<=5;k++) linhas.push(Number(document.getElementById(`l${k}_${i}`).value) || 0);
-    const media = parseFloat(document.getElementById(`media_${i}`).value) || 0;
-    const obs_dan = document.getElementById(`obs_dan_${i}`).value || '';
-    const obs_prag = document.getElementById(`obs_prag_${i}`).value || '';
-    const obs_nod = document.getElementById(`obs_nod_${i}`).value || '';
-    // fotos: transformar em dataURL para PDF (opcional e assíncrono)
-    const inputFotos = document.getElementById(`fotos_${i}`);
-    const fotosData = [];
-    if (inputFotos && inputFotos.files && inputFotos.files.length) {
-      for (const f of inputFotos.files) {
-        try {
-          const dataUrl = await fileToDataURL(f, 1000); // redimensiona para caber no pdf
-          fotosData.push(dataUrl);
-        } catch(e) { /* ignora */ }
-      }
-    }
-    pontos.push({i, lat, lon, linhas, media, obs_dan, obs_prag, obs_nod, fotosData});
-  }
-  const pop = document.getElementById('resultadoPopulacao').value || '';
-  return {resp, tal, area, esp, qtd, pop, pontos};
-}
-
-/* util: File -> DataURL (com redimensionamento via canvas para não estourar o PDF) */
-function fileToDataURL(file, maxSide=1000) {
-  return new Promise((resolve, reject) => {
-    const fr = new FileReader();
-    fr.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        let w = img.width, h = img.height;
-        if (Math.max(w,h) > maxSide) {
-          const ratio = maxSide / Math.max(w,h);
-          w = Math.round(w * ratio);
-          h = Math.round(h * ratio);
-        }
-        const c = document.createElement('canvas');
-        c.width = w; c.height = h;
-        const ctx = c.getContext('2d');
-        ctx.drawImage(img,0,0,w,h);
-        resolve(c.toDataURL('image/jpeg', 0.8));
-      };
-      img.onerror = reject;
-      img.src = fr.result;
-    };
-    fr.onerror = reject;
-    fr.readAsDataURL(file);
-  });
-}
-
-/* Gera PDF usando jsPDF (se biblioteca não carregada, avisa) */
-async function gerarPDF() {
-  // tenta coletar dados e gerar
-  try {
-    const dados = await coletarDadosRelatorio();
-
-    // ui feedback - checa se jsPDF está disponível (CDN)
-    const hasJsPDF = (window.jspdf && window.jspdf.jsPDF) || (window.jspdf !== undefined);
-    if (!hasJsPDF) {
-      return alert('Biblioteca jsPDF não carregada. Conecte o dispositivo à internet OU exporte os dados como JSON para gerar PDF em outro momento.');
-    }
-
-    // criar pdf
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('p','mm','a4');
-    let y = 12;
-    doc.setFontSize(14);
-    doc.text('Relatório - Controle de Stande (Soja)', 14, y); y += 8;
-    doc.setFontSize(10);
-    doc.text(`Responsável: ${dados.resp}`, 14, y); y += 6;
-    doc.text(`Talhão: ${dados.tal}   Área (ha): ${dados.area}   Espaçamento (cm): ${dados.esp}`, 14, y); y += 8;
-    doc.text(`Pontos: ${dados.qtd}   População estimada (plants/ha): ${dados.pop}`, 14, y); y += 8;
-
-    // tabela com pontos (index, lat, lon, média, observações)
-    const tableBody = [];
-    for (const p of dados.pontos) {
-      const obs = `Daninhas:${p.obs_dan} | Pragas:${p.obs_prag} | Nódulos:${p.obs_nod}`;
-      tableBody.push([String(p.i), p.lat || '-', p.lon || '-', p.media.toFixed(3), obs.substring(0,60)]);
-    }
-    // autotable se disponível
-    if (doc.autoTable) {
-      doc.autoTable({
-        startY: y,
-        head: [['Ponto','Lat','Lon','Média (pl/m)','Observações (resumo)']],
-        body: tableBody,
-        styles: { fontSize:9 },
-        margin: { left: 14, right: 14 }
-      });
-      y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 6 : y + 6;
-    } else {
-      // fallback simples: imprimir linhas
-      for (const row of tableBody) {
-        doc.text(`${row.join(' | ')}`, 14, y);
-        y += 5;
-        if (y > 270) { doc.addPage(); y = 12; }
-      }
-    }
-
-    // anexar 1ª foto de cada ponto (se houver), em páginas seguintes
-    for (const p of dados.pontos) {
-      if (p.fotosData && p.fotosData.length) {
-        doc.addPage();
-        doc.setFontSize(12);
-        doc.text(`Ponto ${p.i} - Fotos`, 14, 14);
-        let yy = 24;
-        for (const dataUrl of p.fotosData) {
-          try {
-            doc.addImage(dataUrl, 'JPEG', 14, yy, 170, 100);
-            yy += 105;
-            if (yy > 240) { doc.addPage(); yy = 24; }
-          } catch(e) {
-            // se der erro ao adicionar imagem, ignora
-          }
-        }
-      }
-    }
-
-    // finalizar (abre download)
-    const nome = `relatorio_stande_${dados.tal || 'sem_talhao'}_${(new Date()).toISOString().slice(0,10)}.pdf`;
-    doc.save(nome);
-  } catch (err) {
-    console.error(err);
-    alert('Erro ao gerar PDF: ' + (err.message || err));
-  }
-}
-
-/* util: caso queira exportar tudo como JSON (offline seguro) */
-function exportarJSON() {
-  coletarDadosRelatorio().then(dados => {
-    const blob = new Blob([JSON.stringify(dados, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url;
-    a.download = `relatorio_stande_${dados.tal || 'sem_talhao'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-}
-</script>
-
-<!-- Registro do service worker (você já criou service-worker.js separadamente) -->
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("service-worker.js")
-      .then(() => console.log("Service Worker registrado. App disponível para instalação."))
-      .catch(err => console.error("Erro no registro do Service Worker:", err));
-  }
-</script>
+  <button onclick="gerarPDF()">Gerar PDF</button>
 
 </body>
 </html>
