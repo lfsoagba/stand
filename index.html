@@ -15,136 +15,112 @@
     h1{margin:0 0 14px 0;font-size:20px}
     .section{background:var(--card);padding:14px;border-radius:var(--radius);margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
     label{display:block;font-weight:600;margin-top:8px}
-    input,select,textarea,button{
-      width:100%;padding:10px;margin-top:6px;box-sizing:border-box;
-      border:1px solid #ddd;border-radius:6px;font-size:15px;background:#fff;
-    }
+    input,select,textarea,button{width:100%;padding:10px;margin-top:6px;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;font-size:15px;background:#fff}
     textarea{resize:vertical}
-    .linha{display:flex;gap:var(--gap);flex-wrap:wrap;margin-top:6px}
+    .linha{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap;margin-top:6px}
     .linha input{flex:1 1 18%;min-width:64px;padding:8px;text-align:center}
-    .ponto{
-      border:1px solid #e6e6e6;padding:12px;border-radius:8px;margin-top:12px;background:#fafafa
-    }
-    .coord-btn{
-      margin-top:10px;padding:10px;background:var(--accent);color:#fff;border:none;
-      border-radius:6px;cursor:pointer
-    }
+    .ponto{border:1px solid #e6e6e6;padding:12px;border-radius:8px;margin-top:12px;background:#fafafa}
+    .coord-btn{margin-top:10px;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer}
     .coord-display{font-size:13px;margin-top:6px;color:#444}
     .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
     .controls button{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer}
     .controls .primary{background:var(--accent);color:#fff}
     .controls .secondary{background:#666;color:#fff}
-
-    @media(max-width:600px){
-      .linha input{flex:1 1 48%}
-      .controls{flex-direction:column}
-    }
+    @media(max-width:600px){ .linha input{flex:1 1 48%} .row{flex-direction:column} .controls{flex-direction:column} }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
-
 <body>
   <h1>Controle de Estande - Soja</h1>
 
-  <!-- SEÇÃO SUPERIOR -->
   <div class="section">
     <label>Responsável Técnico</label>
-    <input id="responsavel" autocomplete="name">
+    <input id="responsavel" placeholder="Nome do responsável técnico" autocomplete="name">
 
     <label>Talhão</label>
     <select id="talhao"><option value="">Selecione...</option></select>
 
-    <label>Área (ha)</label>
-    <input id="area" readonly>
+    <label>Área do talhão (ha)</label>
+    <input id="area" type="number" readonly>
 
     <label>Espaçamento entre linhas (cm)</label>
-    <input id="espacamento" type="number" min="5" value="45">
+    <input id="espacamento" type="number" value="45" min="5">
 
-    <label>Pontos (1 por 40 ha)</label>
-    <input id="qtdPontos" readonly>
+    <label>Quantidade de pontos (1 ponto a cada 40 ha)</label>
+    <input id="qtdPontos" type="number" readonly>
   </div>
 
   <div id="pontosContainer"></div>
 
   <div class="section controls">
-    <button class="primary" onclick="calcularPopulacao()">Calcular População</button>
-    <button class="secondary" onclick="gerarPDF()">Gerar PDF</button>
+    <button class="primary" onclick="calcularPopulacao()">Calcular População (plants/ha)</button>
+    <button class="secondary" onclick="gerarPDF()">Gerar Relatório em PDF</button>
   </div>
 
   <div class="section">
-    <label>População estimada (pl/ha)</label>
+    <label>Resultado - População estimada (plants/ha)</label>
     <input id="resultadoPopulacao" readonly>
   </div>
 
 <script>
-/* =========================
-   TABELA DOS TALHÕES
-   ========================= */
+/* ================== TALHÕES ================== */
 const talhaoAreas = {
-  "XIG.JAI.B01.T01":101.35,"XIG.JAI.B01.T02":232.71,"XIG.JAI.B01.T03":263.19,
-  "XIG.JAI.B02.T04":182.29,"XIG.JAI.B02.T05":281.13,"XIG.JAI.B02.T06":322.21,
-  "XIG.JAI.B03.T07":289.34,"XIG.JAI.B03.T08":190.62,"XIG.JAI.B03.T09":458.33,
-  "XIG.JAI.B04.T10":249.21,"XIG.JAI.B05.T11":320.88,"XIG.JAI.B05.T12":234.11,
-  "XIG.JAI.B05.T13":181.34,"XIG.JAI.B04.T14":301.32,"XIG.JAI.B04.T15":243.86,
-  "XIG.JAI.B04.T16":179.15,"XIG.JAI.B05.T17":239.50,"XIG.JAI.B05.T18":230.99,
-  "XIG.JAI.B05.T19":105.76,"XIG.JAI.B06.T20":52.99,"XIG.JAI.B06.T21":154.06,
-  "XIG.JAI.B06.T22":91.23,"XIG.MAM.B01.T01":213.20,"XIG.MAM.B01.T02":138.12,
-  "XIG.MAM.B01.T03":209.32,"XIG.MAM.B02.T04":85.52,"XIG.NSA.B01.T01":185.81,
-  "XIG.NSA.B01.T02":162.25,"XIG.NSA.B01.T03":185.58,"XIG.NSA.B01.T04":160.22,
-  "XIG.NSA.B01.T05":269.38,"XIG.NSA.B02.T06":247.32,"XIG.NSA.B02.T07":258.16,
-  "XIG.NSA.B02.T08":342.79,"XIG.NSA.B02.T09":269.56,"XIG.SO1.B01.T01":331.02,
-  "XIG.SO1.B01.T02":298.14,"XIG.SO1.B01.T03":246.06,"XIG.SO1.B03.T04":268.74,
-  "XIG.SO1.B03.T05":200.82,"XIG.SO1.B02.T06":404.92,"XIG.SO1.B02.T07":275.67,
-  "XIG.SO2.B01.T01":189.04,"XIG.SO2.B02.T02":217.93,"XIG.SO2.B02.T03":295.56,
-  "XIG.SO2.B01.T04":346.18,"XIG.SO2.B01.T05":213.62,"XIG.SO2.B03.T06":166.29,
-  "XIG.SO2.B03.T07":303.40,"XIG.STE.B01.T01":124.68,"XIG.STE.B02.T02":303.20,
-  "XIG.STE.B03.T03":300.19,"XIG.STE.B03.T04":365.53,"XIG.STE.B02.T05":281.90,
-  "XIG.STE.B02.T06":180.08
+  "XIG.JAI.B01.T01": 101.35,"XIG.JAI.B01.T02": 232.71,"XIG.JAI.B01.T03": 263.19,
+  "XIG.JAI.B02.T04": 182.29,"XIG.JAI.B02.T05": 281.13,"XIG.JAI.B02.T06": 322.21,
+  "XIG.JAI.B03.T07": 289.34,"XIG.JAI.B03.T08": 190.62,"XIG.JAI.B03.T09": 458.33,
+  "XIG.JAI.B04.T10": 249.21,"XIG.JAI.B05.T11": 320.88,"XIG.JAI.B05.T12": 234.11,
+  "XIG.JAI.B05.T13": 181.34,"XIG.JAI.B04.T14": 301.32,"XIG.JAI.B04.T15": 243.86,
+  "XIG.JAI.B04.T16": 179.15,"XIG.JAI.B05.T17": 239.50,"XIG.JAI.B05.T18": 230.99,
+  "XIG.JAI.B05.T19": 105.76,"XIG.JAI.B06.T20": 52.99,"XIG.JAI.B06.T21": 154.06,
+  "XIG.JAI.B06.T22": 91.23,"XIG.MAM.B01.T01": 213.20,"XIG.MAM.B01.T02": 138.12,
+  "XIG.MAM.B01.T03": 209.32,"XIG.MAM.B02.T04": 85.52,"XIG.NSA.B01.T01": 185.81,
+  "XIG.NSA.B01.T02": 162.25,"XIG.NSA.B01.T03": 185.58,"XIG.NSA.B01.T04": 160.22,
+  "XIG.NSA.B01.T05": 269.38,"XIG.NSA.B02.T06": 247.32,"XIG.NSA.B02.T07": 258.16,
+  "XIG.NSA.B02.T08": 342.79,"XIG.NSA.B02.T09": 269.56,"XIG.SO1.B01.T01": 331.02,
+  "XIG.SO1.B01.T02": 298.14,"XIG.SO1.B01.T03": 246.06,"XIG.SO1.B03.T04": 268.74,
+  "XIG.SO1.B03.T05": 200.82,"XIG.SO1.B02.T06": 404.92,"XIG.SO1.B02.T07": 275.67,
+  "XIG.SO2.B01.T01": 189.04,"XIG.SO2.B02.T02": 217.93,"XIG.SO2.B02.T03": 295.56,
+  "XIG.SO2.B01.T04": 346.18,"XIG.SO2.B01.T05": 213.62,"XIG.SO2.B03.T06": 166.29,
+  "XIG.SO2.B03.T07": 303.40,"XIG.STE.B01.T01": 124.68,"XIG.STE.B02.T02": 303.20,
+  "XIG.STE.B03.T03": 300.19,"XIG.STE.B03.T04": 365.53,"XIG.STE.B02.T05": 281.90,
+  "XIG.STE.B02.T06": 180.08
 };
 
-/* =========================
-   POPULAR DROPDOWN
-   ========================= */
 document.addEventListener("DOMContentLoaded", () => {
   const sel = document.getElementById("talhao");
-  Object.keys(talhaoAreas).forEach(t => {
+  Object.keys(talhaoAreas).forEach(k => {
     const o = document.createElement("option");
-    o.value = t;
-    o.textContent = t;
+    o.value = k;
+    o.textContent = k;
     sel.appendChild(o);
   });
   sel.addEventListener("change", selecionarArea);
 });
 
-/* =========================
-   SELECIONAR TALHÃO
-   ========================= */
-function selecionarArea() {
-  const t = document.getElementById("talhao").value;
-  document.getElementById("area").value = talhaoAreas[t] || "";
+function selecionarArea(){
+  const talhao = document.getElementById("talhao").value;
+  document.getElementById("area").value = talhaoAreas[talhao] || "";
   calcularPontos();
 }
 
-/* =========================
-   GERAR PONTOS
-   ========================= */
-function calcularPontos() {
+/* ================== GERAR PONTOS ================== */
+function calcularPontos(){
   const area = parseFloat(document.getElementById("area").value) || 0;
   const qtd = Math.max(1, Math.ceil(area / 40));
   document.getElementById("qtdPontos").value = qtd;
   gerarPontos(qtd);
 }
 
-function gerarPontos(qtd) {
+function gerarPontos(qtd){
   const container = document.getElementById("pontosContainer");
   container.innerHTML = "";
 
-  for (let i = 1; i <= qtd; i++) {
-    const div = document.createElement("div");
-    div.className = "ponto";
+  for (let i = 1; i <= qtd; i++){
+    const d = document.createElement("div");
+    d.className = "ponto";
 
-    div.innerHTML = `
+    d.innerHTML = `
       <h3>Ponto ${i}</h3>
 
       <label>Fase Fenológica</label>
@@ -156,28 +132,28 @@ function gerarPontos(qtd) {
         <option>R4</option><option>R5</option><option>R6</option>
       </select>
 
-      <label>Contagem (5 linhas × 5 m)</label>
+      <label>Contagem de plantas (5 linhas de 5 m)</label>
       <div class="linha">
-        <input class="l1" type="number" min="0" placeholder="L1">
-        <input class="l2" type="number" min="0" placeholder="L2">
-        <input class="l3" type="number" min="0" placeholder="L3">
-        <input class="l4" type="number" min="0" placeholder="L4">
-        <input class="l5" type="number" min="0" placeholder="L5">
+        <input class="l1" type="number" min="0">
+        <input class="l2" type="number" min="0">
+        <input class="l3" type="number" min="0">
+        <input class="l4" type="number" min="0">
+        <input class="l5" type="number" min="0">
       </div>
 
-      <label>Média (pl/m)</label>
+      <label>Média (plantas/m)</label>
       <input class="media" readonly>
 
-      <button class="coord-btn" onclick="registrarGPS(this)">Registrar Coordenada</button>
+      <button class="coord-btn" onclick="registrarCoordenada(this)">Registrar Coordenada (GPS)</button>
       <div class="coord-display"></div>
 
-      <label>Fotos (máx. 5 / 10MB)</label>
-      <input class="fotos" type="file" accept="image/*" multiple onchange="validarFotos(this)">
+      <label>Fotos (máx 5 / 10MB cada)</label>
+      <input type="file" class="fotos" accept="image/*" multiple onchange="validarFotos(this)">
 
-      <label>Daninhas</label>
+      <label>Observações - Daninhas</label>
       <textarea class="obs-dan"></textarea>
 
-      <label>Pragas & Doenças</label>
+      <label>Observações - Pragas & Doenças</label>
       <textarea class="obs-prag"></textarea>
 
       <label>Nódulos - Raiz Principal</label>
@@ -187,195 +163,161 @@ function gerarPontos(qtd) {
       <input class="nod-secundarias">
     `;
 
-    container.appendChild(div);
+    container.appendChild(d);
 
-    div.querySelectorAll(".linha input")
-       .forEach(inp => inp.addEventListener("input", () => atualizarMedia(div)));
+    d.querySelectorAll(".linha input")
+      .forEach(el => el.addEventListener("input", () => atualizarMedia(d)));
   }
 }
 
-/* =========================
-   MÉDIA (1 casa decimal)
-   ========================= */
-function atualizarMedia(div) {
+/* ================== MÉDIAS ================== */
+function atualizarMedia(div){
   const vals = [...div.querySelectorAll(".linha input")].map(i => Number(i.value) || 0);
   const media = vals.reduce((a,b)=>a+b,0) / 25;
   div.querySelector(".media").value = media.toFixed(1);
 }
 
-/* =========================
-   GPS
-   ========================= */
-function registrarGPS(btn) {
-  const box = btn.parentElement.querySelector(".coord-display");
+/* ================== COORDENADAS ================== */
+function registrarCoordenada(btn){
+  const target = btn.parentElement.querySelector(".coord-display");
   navigator.geolocation.getCurrentPosition(
-    pos => box.textContent =
-      `Lat: ${pos.coords.latitude.toFixed(6)}, Lon: ${pos.coords.longitude.toFixed(6)}`,
-    err => alert("Erro ao obter coordenada: " + err.message),
-    {enableHighAccuracy:true,timeout:8000}
+    pos => target.textContent = `Lat: ${pos.coords.latitude.toFixed(6)}, Lon: ${pos.coords.longitude.toFixed(6)}`,
+    err => alert("Erro: " + err.message),
+    { enableHighAccuracy:true, timeout:10000 }
   );
 }
 
-/* =========================
-   FOTOS
-   ========================= */
-function validarFotos(input) {
-  if (input.files.length > 5) {
-    alert("Máximo 5 fotos!");
+/* ================== LIMITAR FOTOS ================== */
+function validarFotos(input){
+  if (!input.files) return;
+  if (input.files.length > 5){
+    alert("Limite de 5 fotos");
     input.value = "";
     return;
   }
-  for (let f of input.files)
-    if (f.size > 10*1024*1024) {
-      alert("Cada foto deve ter até 10MB");
+  for (const f of input.files)
+    if (f.size > 10*1024*1024){
+      alert("Cada foto deve ter no máximo 10MB");
       input.value = "";
       return;
     }
 }
 
-/* =========================
-   POPULAÇÃO POR HECTARE
-   ========================= */
-function calcularPopulacao() {
-  const pts = [...document.querySelectorAll(".ponto")];
-  const medias = pts.map(p => Number(p.querySelector(".media").value));
+/* ================== POPULAÇÃO ================== */
+function coletarMedias(){
+  return [...document.querySelectorAll(".ponto")].map(p=>{
+    const m = parseFloat(p.querySelector(".media").value);
+    return isNaN(m)?null:m;
+  });
+}
 
-  if (medias.some(m => isNaN(m))) {
-    alert("Preencha todas as contagens.");
+function calcularPopulacao(){
+  const medias = coletarMedias();
+  if (medias.some(m=>m===null)){
+    alert("Preencha todos os pontos");
     return;
   }
 
+  const esp = (parseFloat(document.getElementById("espacamento").value)||45)/100;
   const mediaGeral = medias.reduce((a,b)=>a+b,0) / medias.length;
-  const esp = Number(document.getElementById("espacamento").value) / 100;
-  const pop = mediaGeral * (10000 / esp);
+  const pop = Math.round(mediaGeral * (10000/esp));
 
-  document.getElementById("resultadoPopulacao").value = Math.round(pop);
+  document.getElementById("resultadoPopulacao").value = pop;
+  return pop;
 }
 
-/* =========================
-   FILE -> DATAURL (proporção mantida)
-   ========================= */
-function fileToDataURL(file, maxSide=1200) {
-  return new Promise((resolve,reject)=>{
-    const fr = new FileReader();
-    fr.onload = ()=>{
-      const img = new Image();
-      img.onload = ()=>{
-        let w = img.width, h = img.height;
-        if (Math.max(w,h) > maxSide) {
-          const r = maxSide / Math.max(w,h);
-          w = Math.round(w*r);
-          h = Math.round(h*r);
+/* ================== PDF ================== */
+function fileToDataURL(f, maxSide=1200){
+  return new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if (Math.max(w,h) > maxSide){
+          const r = maxSide/Math.max(w,h);
+          w*=r; h*=r;
         }
-        const c = document.createElement("canvas");
-        c.width = w; c.height = h;
+        const c=document.createElement("canvas");
+        c.width=w; c.height=h;
         c.getContext("2d").drawImage(img,0,0,w,h);
-        resolve(c.toDataURL("image/jpeg",0.85));
+        res(c.toDataURL("image/jpeg",0.85));
       };
-      img.src = fr.result;
+      img.src=fr.result;
     };
-    fr.readAsDataURL(file);
+    fr.readAsDataURL(f);
   });
 }
 
-function dataUrlToImg(url){
-  return new Promise((r,j)=>{
-    const img = new Image();
-    img.onload = ()=>r(img);
-    img.onerror = j;
-    img.src = url;
-  });
-}
-
-/* =========================
-   GERAR PDF FINAL
-   ========================= */
-async function gerarPDF() {
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert("jsPDF não carregado.");
-    return;
-  }
-
+async function gerarPDF(){
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
+  const doc = new jsPDF("p","mm","a4");
   let y = 12;
 
   doc.setFontSize(14);
-  doc.text("Relatório - Controle de Estande (Soja)", 14, y); y+=8;
+  doc.text("Relatório - Controle de Estande (Soja)", 14, y);
+  y+=10;
 
   doc.setFontSize(10);
-  doc.text(`Responsável: ${document.getElementById("responsavel").value || "-"}`, 14, y); y+=6;
-  doc.text(`Talhão: ${document.getElementById("talhao").value || "-"}`, 14, y); y+=6;
-  doc.text(`Área: ${document.getElementById("area").value || "-"}`, 14, y); y+=8;
+  doc.text(`Responsável: ${document.getElementById("responsavel").value}`,14,y); y+=6;
+  doc.text(`Talhão: ${document.getElementById("talhao").value}`,14,y); y+=6;
+  doc.text(`Área: ${document.getElementById("area").value} ha`,14,y); y+=6;
 
-  const pts = [...document.querySelectorAll(".ponto")];
+  const pontos = [...document.querySelectorAll(".ponto")];
 
-  for (let i = 0; i < pts.length; i++) {
-    const p = pts[i];
+  for (let i=0;i<pontos.length;i++){
+    const p = pontos[i];
+
     doc.setFontSize(12);
-    doc.text(`Ponto ${i+1}`, 14, y); y+=6;
+    doc.text(`Ponto ${i+1}`,14,y); y+=6;
 
-    const fase = p.querySelector(".fase").value || "-";
     doc.setFontSize(10);
-    doc.text(`Fase fenológica: ${fase}`, 14, y); y+=6;
 
-    const l1 = p.querySelector(".l1").value || "0";
-    const l2 = p.querySelector(".l2").value || "0";
-    const l3 = p.querySelector(".l3").value || "0";
-    const l4 = p.querySelector(".l4").value || "0";
-    const l5 = p.querySelector(".l5").value || "0";
+    doc.text(`Fase: ${p.querySelector(".fase").value||"-"}`,14,y); y+=6;
 
-    doc.text(`L1: ${l1}  L2: ${l2}  L3: ${l3}  L4: ${l4}  L5: ${l5}`, 14, y); y+=6;
+    ["l1","l2","l3","l4","l5"].forEach((l,ix)=>{
+      doc.text(`Linha ${ix+1}: ${p.querySelector("."+l).value||0}`,14,y);
+      y+=5;
+    });
+    y+=2;
 
-    const media = p.querySelector(".media").value || "0.0";
-    doc.text(`Média (pl/m): ${media}`, 14, y); y+=6;
+    doc.text(`Média: ${p.querySelector(".media").value}`,14,y); y+=6;
 
-    const coord = p.querySelector(".coord-display").textContent || "Não registrada";
-    doc.text(`Coord: ${coord}`, 14, y); y+=6;
+    doc.text(`Coord: ${p.querySelector(".coord-display").textContent||"-"}`,14,y); y+=6;
 
-    const dan = p.querySelector(".obs-dan").value || "-";
-    const pra = p.querySelector(".obs-prag").value || "-";
-    const nodP = p.querySelector(".nod-principal").value || "-";
-    const nodS = p.querySelector(".nod-secundarias").value || "-";
+    doc.text(`Daninhas: ${p.querySelector(".obs-dan").value||"-"}`,14,y); y+=6;
+    doc.text(`Pragas: ${p.querySelector(".obs-prag").value||"-"}`,14,y); y+=6;
+    doc.text(`Nód. Principal: ${p.querySelector(".nod-principal").value||"-"}`,14,y); y+=6;
+    doc.text(`Nód. Secundárias: ${p.querySelector(".nod-secundarias").value||"-"}`,14,y); y+=8;
 
-    doc.text(`Daninhas: ${dan}`, 14, y); y+=5;
-    doc.text(`Pragas/Doenças: ${pra}`, 14, y); y+=5;
-    doc.text(`Nód Principal: ${nodP}`, 14, y); y+=5;
-    doc.text(`Nód Secundárias: ${nodS}`, 14, y); y+=8;
-
-    // Fotos mantendo proporção
     const fotos = p.querySelector(".fotos").files;
-    for (let f of fotos) {
-      const url = await fileToDataURL(f);
-      const img = await dataUrlToImg(url);
+    if (fotos.length){
+      for (const f of fotos){
+        const dataUrl = await fileToDataURL(f);
+        const img = new Image();
+        img.src = dataUrl;
+        await new Promise(r=>img.onload=r);
 
-      const pxToMm = px => px * 0.2645833333;
+        let wmm = img.width * 0.2645;
+        let hmm = img.height * 0.2645;
+        const ratio = Math.min(180/wmm, 120/hmm, 1);
+        wmm*=ratio; hmm*=ratio;
 
-      let w = pxToMm(img.width);
-      let h = pxToMm(img.height);
+        if (y + hmm > 280){ doc.addPage(); y=12; }
 
-      const maxW = 180;
-      const maxH = 140;
-      const ratio = Math.min(maxW/w, maxH/h);
-
-      w = w*ratio; h = h*ratio;
-
-      if (y + h > 280) { doc.addPage(); y = 12; }
-
-      doc.addImage(url, "JPEG", 14, y, w, h);
-      y += h + 8;
+        doc.addImage(dataUrl, "JPEG", 14, y, wmm, hmm);
+        y+=hmm+6;
+      }
     }
 
-    if (y > 270) { doc.addPage(); y = 12; }
+    if (y > 260){ doc.addPage(); y=12; }
   }
 
   doc.save("relatorio_estande.pdf");
 }
 
-/* =========================
-   SERVICE WORKER
-   ========================= */
-if ("serviceWorker" in navigator) {
+/* ================== SERVICE WORKER ================== */
+if ('serviceWorker' in navigator){
   navigator.serviceWorker.register("service-worker.js");
 }
 </script>
