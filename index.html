@@ -27,6 +27,9 @@
     .controls button{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer}
     .controls .primary{background:var(--accent);color:#fff}
     .controls .secondary{background:#666;color:#fff}
+    .foto-actions{display:flex;gap:8px;margin-top:8px}
+    .foto-actions button{flex:1;padding:8px;border-radius:6px;border:none;cursor:pointer}
+    .foto-count{font-size:13px;color:var(--muted);margin-top:6px}
     @media(max-width:600px){ .linha input{flex:1 1 48%} .row{flex-direction:column} .controls{flex-direction:column} }
   </style>
 
@@ -130,6 +133,24 @@ function gerarPontos(qtd) {
     div.innerHTML = `
       <h3>Ponto ${i}</h3>
 
+      <label>Fase Fenológica</label>
+      <select class="fase">
+        <option value="">Selecione...</option>
+        <option value="VE">VE</option>
+        <option value="V1">V1</option>
+        <option value="V2">V2</option>
+        <option value="V3">V3</option>
+        <option value="V4">V4</option>
+        <option value="V5">V5</option>
+        <option value="V6+">V6+</option>
+        <option value="R1">R1</option>
+        <option value="R2">R2</option>
+        <option value="R3">R3</option>
+        <option value="R4">R4</option>
+        <option value="R5">R5</option>
+        <option value="R6">R6</option>
+      </select>
+
       <label>Contagem de plantas (5 linhas de 5 m)</label>
       <div class="linha">
         <input type="number" class="l1" placeholder="Linha 1" inputmode="numeric" min="0">
@@ -146,7 +167,13 @@ function gerarPontos(qtd) {
       <div class="coord-display"></div>
 
       <label>Fotos (máx 5 / 10MB cada)</label>
-      <input type="file" class="fotos" accept="image/*" multiple>
+      <input type="file" class="fotos" accept="image/*" multiple onchange="validarFotos(this)">
+
+      <div class="foto-actions">
+        <button type="button" onclick="triggerFoto(this, 'capture')">Tirar foto (câmera)</button>
+        <button type="button" onclick="triggerFoto(this, 'select')">Selecionar fotos</button>
+      </div>
+      <div class="foto-count">0 fotos selecionadas</div>
 
       <label>Observações - Daninhas</label>
       <textarea class="obs-dan" rows="2"></textarea>
@@ -154,14 +181,25 @@ function gerarPontos(qtd) {
       <label>Observações - Pragas & Doenças</label>
       <textarea class="obs-prag" rows="2"></textarea>
 
-      <label>Observações - Nódulos</label>
-      <textarea class="obs-nod" rows="2"></textarea>
+      <label>Nódulos - Raiz Principal</label>
+      <input type="text" class="nod-principal" placeholder="Quantidade / Observações">
+
+      <label>Nódulos - Raízes Secundárias</label>
+      <input type="text" class="nod-secundarias" placeholder="Quantidade / Observações">
     `;
     container.appendChild(div);
 
     // add listeners para atualizar a média quando mudar qualquer input de linha
     const lineInputs = div.querySelectorAll('.linha input');
     lineInputs.forEach(inp => inp.addEventListener('input', ()=> atualizarMedia(div)));
+
+    // atualizar contador de fotos quando mudar seleção via input
+    const fotosInput = div.querySelector('.fotos');
+    const fotoCountDisplay = div.querySelector('.foto-count');
+    fotosInput.addEventListener('change', () => {
+      const n = fotosInput.files ? fotosInput.files.length : 0;
+      fotoCountDisplay.textContent = `${n} foto${n===1?'':'s'} selecionada${n===1?'':'s'}`;
+    });
   }
 }
 
@@ -186,12 +224,40 @@ function registrarCoordenada(btn) {
   );
 }
 
+/* ===== função que dispara input de fotos para captura ou seleção ===== */
+function triggerFoto(button, mode) {
+  // button is inside div.ponto; find the related input.fotos
+  const div = button.closest('.ponto');
+  if (!div) return;
+  const input = div.querySelector('.fotos');
+  if (!input) return;
+
+  // set or remove capture attribute
+  if (mode === 'capture') {
+    input.setAttribute('capture', 'environment'); // pede câmera traseira quando suportado
+  } else {
+    input.removeAttribute('capture');
+  }
+  // trigger click
+  input.click();
+}
+
 /* ===== valida fotos (limites) ===== */
 function validarFotos(input) {
   const files = input.files;
   if (!files) return;
-  if (files.length > 5) { alert('Máx 5 fotos por ponto'); input.value=''; return; }
-  for (const f of files) if (f.size > 10*1024*1024){ alert('Cada foto deve ter até 10MB'); input.value=''; return; }
+  if (files.length > 5) { alert('Máx 5 fotos por ponto'); input.value=''; updateFotoCount(input); return; }
+  for (const f of files) if (f.size > 10*1024*1024){ alert('Cada foto deve ter até 10MB'); input.value=''; updateFotoCount(input); return; }
+  updateFotoCount(input);
+}
+
+/* atualiza contagem de fotos no UI (quando input muda) */
+function updateFotoCount(input) {
+  const div = input.closest('.ponto');
+  if (!div) return;
+  const display = div.querySelector('.foto-count');
+  const n = input.files ? input.files.length : 0;
+  display.textContent = `${n} foto${n===1?'':'s'} selecionada${n===1?'':'s'}`;
 }
 
 /* ===== coleta todas as médias (usada no cálculo de população) ===== */
@@ -244,6 +310,16 @@ function fileToDataURL(file, maxSide=1200) {
   });
 }
 
+/* util: dataURL -> Image object */
+function dataUrlToImage(dataUrl) {
+  return new Promise((resolve,reject)=>{
+    const img = new Image();
+    img.onload = ()=> resolve(img);
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
 /* ===== gera PDF (média já com 1 casa decimal; inclui contagens; imagens com proporção) ===== */
 async function gerarPDF() {
   // checar jsPDF
@@ -268,6 +344,11 @@ async function gerarPDF() {
     doc.setFontSize(12);
     doc.text(`Ponto ${idx+1}`, 14, y); y+=6;
 
+    // Fase fenológica
+    const fase = p.querySelector('.fase').value || '-';
+    doc.setFontSize(10);
+    doc.text(`Fase fenológica: ${fase}`, 14, y); y+=6;
+
     // contagens das 5 linhas
     const l1 = p.querySelector('.l1').value || '0';
     const l2 = p.querySelector('.l2').value || '0';
@@ -275,7 +356,6 @@ async function gerarPDF() {
     const l4 = p.querySelector('.l4').value || '0';
     const l5 = p.querySelector('.l5').value || '0';
 
-    doc.setFontSize(10);
     doc.text(`Linha 1: ${l1}`, 14, y); y+=5;
     doc.text(`Linha 2: ${l2}`, 14, y); y+=5;
     doc.text(`Linha 3: ${l3}`, 14, y); y+=5;
@@ -293,10 +373,14 @@ async function gerarPDF() {
     // observações
     const obsDan = p.querySelector('.obs-dan').value || '-';
     const obsPrag = p.querySelector('.obs-prag').value || '-';
-    const obsNod = p.querySelector('.obs-nod').value || '-';
     doc.text(`Daninhas: ${truncateForPdf(obsDan)}`, 14, y); y+=6;
     doc.text(`Pragas/Doenças: ${truncateForPdf(obsPrag)}`, 14, y); y+=6;
-    doc.text(`Nódulos: ${truncateForPdf(obsNod)}`, 14, y); y+=8;
+
+    // nódulos principal / secundárias
+    const nodP = p.querySelector('.nod-principal').value || '-';
+    const nodS = p.querySelector('.nod-secundarias').value || '-';
+    doc.text(`Nódulos - Raiz Principal: ${truncateForPdf(nodP)}`, 14, y); y+=6;
+    doc.text(`Nódulos - Raízes Secundárias: ${truncateForPdf(nodS)}`, 14, y); y+=8;
 
     // fotos: adicionar mantendo proporção
     const inputFotos = p.querySelector('.fotos');
@@ -304,9 +388,6 @@ async function gerarPDF() {
       for (let f of inputFotos.files) {
         try {
           const dataUrl = await fileToDataURL(f, 1200); // já redimensiona mantendo proporção
-          // calcular w,h para doc (mm) considerando 72dpi default: use width in px to mm conversion approx:
-          // jsPDF addImage accepts width/height in mm directly; we'll fit max width 180mm, max height 120mm preserving aspect.
-          // create Image object to read dimensions
           const img = await dataUrlToImage(dataUrl);
           const maxW = 180; // mm on page
           const maxH = 120;
@@ -321,7 +402,6 @@ async function gerarPDF() {
           doc.addImage(dataUrl, 'JPEG', 14, y, wmm, hmm);
           y += hmm + 8;
         } catch(e){
-          // se erro ao processar imagem, ignora e continua
           console.error('Erro imagem PDF', e);
         }
         if (y > 270) { doc.addPage(); y = 12; }
@@ -337,19 +417,9 @@ async function gerarPDF() {
 }
 
 /* util para truncar strings longas no PDF */
-function truncateForPdf(str, max=100) {
+function truncateForPdf(str, max=120) {
   if (!str) return '-';
   return (str.length > max) ? (str.slice(0,max) + '...') : str;
-}
-
-/* util: dataURL -> Image object */
-function dataUrlToImage(dataUrl) {
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = ()=> resolve(img);
-    img.onerror = reject;
-    img.src = dataUrl;
-  });
 }
 
 /* ===== registrar service worker (se existir) ===== */
