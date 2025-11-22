@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle de Stande - Soja</title>
+  <title>Controle de Estande - Soja</title>
 
   <!-- manifest (você já informou que criou) -->
   <link rel="manifest" href="manifest.json">
@@ -37,7 +37,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <h1>Controle de Stande - Soja</h1>
+  <h1>Controle de Estande - Soja</h1>
 
   <div class="section">
     <label>Responsável Técnico</label>
@@ -331,7 +331,7 @@ async function gerarPDF() {
   const doc = new jsPDF('p','mm','a4');
   let y=12;
   doc.setFontSize(14);
-  doc.text('Relatório - Controle de Stande (Soja)', 14, y); y+=8;
+  doc.text('Relatório - Controle de Estande (Soja)', 14, y); y+=8;
   doc.setFontSize(10);
   doc.text(`Responsável: ${document.getElementById('responsavel').value || '-'}`, 14, y); y+=6;
   doc.text(`Talhão: ${document.getElementById('talhao').value || '-'}`, 14, y); y+=6;
@@ -412,7 +412,7 @@ async function gerarPDF() {
   }
 
   // salva
-  const nome = `relatorio_stande_${(document.getElementById('talhao').value || 'sem_talhao')}_${(new Date()).toISOString().slice(0,10)}.pdf`;
+  const nome = `relatorio_estande_${(document.getElementById('talhao').value || 'sem_talhao')}_${(new Date()).toISOString().slice(0,10)}.pdf`;
   doc.save(nome);
 }
 
