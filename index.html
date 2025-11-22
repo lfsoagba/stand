@@ -5,428 +5,283 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Controle de Estande - Soja</title>
 
-  <!-- manifest (você já informou que criou) -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2e7d32">
 
   <style>
     :root{--bg:#f4f4f4;--card:#fff;--muted:#666;--accent:#2e7d32;--radius:8px;--gap:8px}
-    html,body{height:100%;margin:0}
-    body{font-family:Arial,Helvetica,sans-serif;background:var(--bg);padding:18px;color:#111}
-    h1{margin:0 0 14px 0;font-size:20px}
-    .section{background:var(--card);padding:14px;border-radius:var(--radius);margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
-    label{display:block;font-weight:600;margin-top:8px}
-    input,select,textarea,button{width:100%;padding:10px;margin-top:6px;box-sizing:border-box;border:1px solid #ddd;border-radius:6px;font-size:15px;background:#fff}
+    body{font-family:Arial;background:var(--bg);margin:0;padding:18px}
+    h1{font-size:20px;margin-bottom:12px}
+    .section{background:#fff;padding:14px;border-radius:8px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+    label{font-weight:600;margin-top:10px;display:block}
+    input,select,textarea{width:100%;padding:10px;margin-top:6px;border:1px solid #ccc;border-radius:6px}
     textarea{resize:vertical}
-    .linha{display:flex;gap:var(--gap);align-items:center;flex-wrap:wrap;margin-top:6px}
-    .linha input{flex:1 1 18%;min-width:64px;padding:8px;text-align:center}
-    .ponto{border:1px solid #e6e6e6;padding:12px;border-radius:8px;margin-top:12px;background:#fafafa}
-    .coord-btn{margin-top:10px;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer}
-    .coord-display{font-size:13px;margin-top:6px;color:#444}
-    .controls{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-    .controls button{flex:1;padding:10px;border:none;border-radius:6px;cursor:pointer}
-    .controls .primary{background:var(--accent);color:#fff}
-    .controls .secondary{background:#666;color:#fff}
+    .linha{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+    .linha input{flex:1 1 18%;min-width:64px;text-align:center}
+    .ponto{padding:14px;border:1px solid #ddd;border-radius:8px;background:#fafafa;margin-top:14px}
+    .coord-btn{padding:10px;background:var(--accent);border:none;color:#fff;border-radius:6px;margin-top:10px;cursor:pointer}
     .foto-actions{display:flex;gap:8px;margin-top:8px}
-    .foto-actions button{flex:1;padding:8px;border-radius:6px;border:none;cursor:pointer}
-    .foto-count{font-size:13px;color:var(--muted);margin-top:6px}
-    @media(max-width:600px){ .linha input{flex:1 1 48%} .row{flex-direction:column} .controls{flex-direction:column} }
+    .foto-actions button{flex:1;padding:8px;border-radius:6px;border:none;background:#2e7d32;color:white}
+    .controls{display:flex;gap:10px;margin-top:10px}
+    .controls button{flex:1;padding:12px;font-size:16px;border:none;border-radius:6px;color:white}
+    .primary{background:#2e7d32}
+    .secondary{background:#444}
   </style>
 
-  <!-- jsPDF (CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-  <h1>Controle de Estande - Soja</h1>
+<h1>Controle de Estande - Soja</h1>
 
-  <div class="section">
-    <label>Responsável Técnico</label>
-    <input id="responsavel" placeholder="Nome do responsável técnico" autocomplete="name">
+<!-- Cabeçalho -->
+<div class="section">
+  <label>Responsável Técnico</label>
+  <input id="responsavel">
 
-    <label>Talhão</label>
-    <select id="talhao"><option value="">Selecione...</option></select>
+  <label>Talhão</label>
+  <select id="talhao"><option value="">Selecione...</option></select>
 
-    <label>Área do talhão (ha)</label>
-    <input id="area" type="number" readonly placeholder="Área preenchida automaticamente">
+  <label>Área do talhão (ha)</label>
+  <input id="area" readonly>
 
-    <label>Espaçamento entre linhas (cm)</label>
-    <input id="espacamento" type="number" value="45" min="5">
+  <label>Espaçamento entre linhas (cm)</label>
+  <input id="espacamento" type="number" value="45">
 
-    <label>Quantidade de pontos (1 ponto a cada 40 ha)</label>
-    <input id="qtdPontos" type="number" readonly>
-    <div style="font-size:13px;color:var(--muted);margin-top:6px">A área é preenchida automaticamente ao escolher o talhão.</div>
-  </div>
+  <label>Quantidade de pontos</label>
+  <input id="qtdPontos" readonly>
+</div>
 
-  <div id="pontosContainer"></div>
+<!-- Pontos -->
+<div id="pontosContainer"></div>
 
-  <div class="section controls">
-    <button class="primary" id="btnCalcPop" onclick="calcularPopulacao()">Calcular População (plants/ha)</button>
-    <button class="secondary" id="btnGerarPdf" onclick="gerarPDF()">Gerar Relatório em PDF</button>
-  </div>
+<!-- Botões -->
+<div class="section controls">
+  <button class="primary" onclick="calcularPopulacao()">Calcular População</button>
+  <button class="secondary" onclick="gerarPDF()">Gerar PDF</button>
+</div>
 
-  <div class="section">
-    <label>Resultado - População estimada (plants/ha)</label>
-    <input id="resultadoPopulacao" readonly>
-  </div>
+<div class="section">
+  <label>População estimada (plantas/ha)</label>
+  <input id="resultadoPopulacao" readonly>
+</div>
 
 <script>
-/* ===== dados de talhões (sua planilha) ===== */
+/* === Talhões === */
 const talhaoAreas = {
-  "XIG.JAI.B01.T01": 101.35,"XIG.JAI.B01.T02": 232.71,"XIG.JAI.B01.T03": 263.19,
-  "XIG.JAI.B02.T04": 182.29,"XIG.JAI.B02.T05": 281.13,"XIG.JAI.B02.T06": 322.21,
-  "XIG.JAI.B03.T07": 289.34,"XIG.JAI.B03.T08": 190.62,"XIG.JAI.B03.T09": 458.33,
-  "XIG.JAI.B04.T10": 249.21,"XIG.JAI.B05.T11": 320.88,"XIG.JAI.B05.T12": 234.11,
-  "XIG.JAI.B05.T13": 181.34,"XIG.JAI.B04.T14": 301.32,"XIG.JAI.B04.T15": 243.86,
-  "XIG.JAI.B04.T16": 179.15,"XIG.JAI.B05.T17": 239.50,"XIG.JAI.B05.T18": 230.99,
-  "XIG.JAI.B05.T19": 105.76,"XIG.JAI.B06.T20": 52.99,"XIG.JAI.B06.T21": 154.06,
-  "XIG.JAI.B06.T22": 91.23,"XIG.MAM.B01.T01": 213.20,"XIG.MAM.B01.T02": 138.12,
-  "XIG.MAM.B01.T03": 209.32,"XIG.MAM.B02.T04": 85.52,"XIG.NSA.B01.T01": 185.81,
-  "XIG.NSA.B01.T02": 162.25,"XIG.NSA.B01.T03": 185.58,"XIG.NSA.B01.T04": 160.22,
-  "XIG.NSA.B01.T05": 269.38,"XIG.NSA.B02.T06": 247.32,"XIG.NSA.B02.T07": 258.16,
-  "XIG.NSA.B02.T08": 342.79,"XIG.NSA.B02.T09": 269.56,"XIG.SO1.B01.T01": 331.02,
-  "XIG.SO1.B01.T02": 298.14,"XIG.SO1.B01.T03": 246.06,"XIG.SO1.B03.T04": 268.74,
-  "XIG.SO1.B03.T05": 200.82,"XIG.SO1.B02.T06": 404.92,"XIG.SO1.B02.T07": 275.67,
-  "XIG.SO2.B01.T01": 189.04,"XIG.SO2.B02.T02": 217.93,"XIG.SO2.B02.T03": 295.56,
-  "XIG.SO2.B01.T04": 346.18,"XIG.SO2.B01.T05": 213.62,"XIG.SO2.B03.T06": 166.29,
-  "XIG.SO2.B03.T07": 303.40,"XIG.STE.B01.T01": 124.68,"XIG.STE.B02.T02": 303.20,
-  "XIG.STE.B03.T03": 300.19,"XIG.STE.B03.T04": 365.53,"XIG.STE.B02.T05": 281.90,
-  "XIG.STE.B02.T06": 180.08
+  "XIG.JAI.B01.T01":101.35,"XIG.JAI.B01.T02":232.71,"XIG.JAI.B01.T03":263.19,
+  "XIG.JAI.B02.T04":182.29,"XIG.JAI.B02.T05":281.13,"XIG.JAI.B02.T06":322.21,
+  "XIG.JAI.B03.T07":289.34,"XIG.JAI.B03.T08":190.62,"XIG.JAI.B03.T09":458.33,
+  "XIG.JAI.B04.T10":249.21,"XIG.JAI.B05.T11":320.88,"XIG.JAI.B05.T12":234.11,
+  "XIG.JAI.B05.T13":181.34,"XIG.JAI.B04.T14":301.32,"XIG.JAI.B04.T15":243.86,
+  "XIG.JAI.B04.T16":179.15,"XIG.JAI.B05.T17":239.50,"XIG.JAI.B05.T18":230.99,
+  "XIG.JAI.B05.T19":105.76,"XIG.JAI.B06.T20":52.99,"XIG.JAI.B06.T21":154.06,
+  "XIG.JAI.B06.T22":91.23,"XIG.MAM.B01.T01":213.20,"XIG.MAM.B01.T02":138.12,
+  "XIG.MAM.B01.T03":209.32,"XIG.MAM.B02.T04":85.52,"XIG.NSA.B01.T01":185.81,
+  "XIG.NSA.B01.T02":162.25,"XIG.NSA.B01.T03":185.58,"XIG.NSA.B01.T04":160.22,
+  "XIG.NSA.B01.T05":269.38,"XIG.NSA.B02.T06":247.32,"XIG.NSA.B02.T07":258.16,
+  "XIG.NSA.B02.T08":342.79,"XIG.NSA.B02.T09":269.56,"XIG.SO1.B01.T01":331.02,
+  "XIG.SO1.B01.T02":298.14,"XIG.SO1.B01.T03":246.06,"XIG.SO1.B03.T04":268.74,
+  "XIG.SO1.B03.T05":200.82,"XIG.SO1.B02.T06":404.92,"XIG.SO1.B02.T07":275.67,
+  "XIG.SO2.B01.T01":189.04,"XIG.SO2.B02.T02":217.93,"XIG.SO2.B02.T03":295.56,
+  "XIG.SO2.B01.T04":346.18,"XIG.SO2.B01.T05":213.62,"XIG.SO2.B03.T06":166.29,
+  "XIG.SO2.B03.T07":303.40,"XIG.STE.B01.T01":124.68,"XIG.STE.B02.T02":303.20,
+  "XIG.STE.B03.T03":300.19,"XIG.STE.B03.T04":365.53,"XIG.STE.B02.T05":281.90,
+  "XIG.STE.B02.T06":180.08
 };
 
-/* ===== popula dropdown de talhões corretamente (sem template strings injetadas) ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('talhao');
-  Object.keys(talhaoAreas).forEach(key => {
-    const opt = document.createElement('option');
-    opt.value = key;
-    opt.textContent = key; // aqui é texto real — SEM ${t}
+/* === Monta dropdown === */
+document.addEventListener("DOMContentLoaded", () => {
+  const sel = document.getElementById("talhao");
+  Object.keys(talhaoAreas).forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t;
+    opt.textContent = t;
     sel.appendChild(opt);
   });
-  sel.addEventListener('change', selecionarArea);
+  sel.onchange = selecionarArea;
 });
 
-/* ===== seleção de talhão / preenchimento de área ===== */
-function selecionarArea() {
-  const sel = document.getElementById('talhao');
-  const areaField = document.getElementById('area');
-  const val = sel.value;
-  if (val && talhaoAreas[val] !== undefined) areaField.value = talhaoAreas[val];
-  else areaField.value = '';
+/* === Seleção de talhão === */
+function selecionarArea(){
+  const t = document.getElementById("talhao").value;
+  document.getElementById("area").value = talhaoAreas[t] || "";
   calcularPontos();
 }
 
-/* ===== cálculo de pontos (1 por 40ha) ===== */
-function calcularPontos() {
-  const area = parseFloat(document.getElementById('area').value) || 0;
-  const pontos = Math.max(1, Math.ceil(area / 40));
-  document.getElementById('qtdPontos').value = pontos;
+/* === Calcula nº de pontos === */
+function calcularPontos(){
+  const area = parseFloat(document.getElementById("area").value)||0;
+  const pontos = Math.max(1, Math.ceil(area/40));
+  document.getElementById("qtdPontos").value = pontos;
   gerarPontos(pontos);
 }
 
-/* ===== gera painéis de ponto ===== */
-function gerarPontos(qtd) {
-  const container = document.getElementById('pontosContainer');
-  container.innerHTML = '';
-  for (let i=1;i<=qtd;i++){
-    const div = document.createElement('div');
-    div.className = 'ponto';
+/* === Gera os blocos dos pontos === */
+function gerarPontos(qtd){
+  const cont = document.getElementById("pontosContainer");
+  cont.innerHTML = "";
+
+  for(let i=1; i<=qtd; i++){
+    const div = document.createElement("div");
+    div.className = "ponto";
+
     div.innerHTML = `
       <h3>Ponto ${i}</h3>
 
       <label>Fase Fenológica</label>
       <select class="fase">
         <option value="">Selecione...</option>
-        <option value="VE">VE</option>
-        <option value="V1">V1</option>
-        <option value="V2">V2</option>
-        <option value="V3">V3</option>
-        <option value="V4">V4</option>
-        <option value="V5">V5</option>
-        <option value="V6+">V6+</option>
-        <option value="R1">R1</option>
-        <option value="R2">R2</option>
-        <option value="R3">R3</option>
-        <option value="R4">R4</option>
-        <option value="R5">R5</option>
-        <option value="R6">R6</option>
+        <option>VE</option><option>V1</option><option>V2</option><option>V3</option>
+        <option>V4</option><option>V5</option><option>V6+</option>
+        <option>R1</option><option>R2</option><option>R3</option><option>R4</option>
+        <option>R5</option><option>R6</option>
       </select>
 
-      <label>Contagem de plantas (5 linhas de 5 m)</label>
+      <label>Contagem (5 linhas de 5 m)</label>
       <div class="linha">
-        <input type="number" class="l1" placeholder="Linha 1" inputmode="numeric" min="0">
-        <input type="number" class="l2" placeholder="Linha 2" inputmode="numeric" min="0">
-        <input type="number" class="l3" placeholder="Linha 3" inputmode="numeric" min="0">
-        <input type="number" class="l4" placeholder="Linha 4" inputmode="numeric" min="0">
-        <input type="number" class="l5" placeholder="Linha 5" inputmode="numeric" min="0">
+        <input class="l1" type="number" min="0" placeholder="L1">
+        <input class="l2" type="number" min="0" placeholder="L2">
+        <input class="l3" type="number" min="0" placeholder="L3">
+        <input class="l4" type="number" min="0" placeholder="L4">
+        <input class="l5" type="number" min="0" placeholder="L5">
       </div>
 
       <label>Média (plantas/m)</label>
-      <input type="text" class="media" readonly>
+      <input class="media" readonly>
 
-      <button type="button" class="coord-btn" onclick="registrarCoordenada(this)">Registrar Coordenada (GPS)</button>
+      <button class="coord-btn" onclick="registrarGPS(this)">Registrar Coordenadas</button>
       <div class="coord-display"></div>
 
-      <label>Fotos (máx 5 / 10MB cada)</label>
+      <label>Fotos (máx 5)</label>
       <input type="file" class="fotos" accept="image/*" multiple onchange="validarFotos(this)">
 
       <div class="foto-actions">
-        <button type="button" onclick="triggerFoto(this, 'capture')">Tirar foto (câmera)</button>
-        <button type="button" onclick="triggerFoto(this, 'select')">Selecionar fotos</button>
+        <button onclick="tirarFoto(this)">Tirar Foto</button>
+        <button onclick="selecionarFoto(this)">Selecionar Fotos</button>
       </div>
-      <div class="foto-count">0 fotos selecionadas</div>
+      <div class="foto-count">0 fotos</div>
 
-      <label>Observações - Daninhas</label>
+      <label>Daninhas</label>
       <textarea class="obs-dan" rows="2"></textarea>
 
-      <label>Observações - Pragas & Doenças</label>
+      <label>Pragas e Doenças</label>
       <textarea class="obs-prag" rows="2"></textarea>
 
-      <label>Nódulos - Raiz Principal</label>
-      <input type="text" class="nod-principal" placeholder="Quantidade / Observações">
+      <label>Nódulos – Raiz Principal</label>
+      <input class="nod-principal">
 
-      <label>Nódulos - Raízes Secundárias</label>
-      <input type="text" class="nod-secundarias" placeholder="Quantidade / Observações">
+      <label>Nódulos – Raízes Secundárias</label>
+      <input class="nod-secundarias">
     `;
-    container.appendChild(div);
 
-    // add listeners para atualizar a média quando mudar qualquer input de linha
-    const lineInputs = div.querySelectorAll('.linha input');
-    lineInputs.forEach(inp => inp.addEventListener('input', ()=> atualizarMedia(div)));
+    cont.appendChild(div);
 
-    // atualizar contador de fotos quando mudar seleção via input
-    const fotosInput = div.querySelector('.fotos');
-    const fotoCountDisplay = div.querySelector('.foto-count');
-    fotosInput.addEventListener('change', () => {
-      const n = fotosInput.files ? fotosInput.files.length : 0;
-      fotoCountDisplay.textContent = `${n} foto${n===1?'':'s'} selecionada${n===1?'':'s'}`;
+    div.querySelectorAll(".linha input").forEach(inp=>{
+      inp.oninput = ()=> atualizarMedia(div);
     });
   }
 }
 
-/* ===== atualiza média (1 casa decimal) ===== */
-function atualizarMedia(div) {
-  const values = Array.from(div.querySelectorAll('.linha input')).map(i => Number(i.value) || 0);
-  const sum = values.reduce((a,b)=>a+b,0);
-  const media = sum / 25; // 5 linhas x 5 m = 25 m
-  div.querySelector('.media').value = media.toFixed(1); // 1 casa decimal
+/* === Média === */
+function atualizarMedia(div){
+  const vals = [...div.querySelectorAll(".linha input")].map(x=>+x.value||0);
+  const media = vals.reduce((a,b)=>a+b,0) / 25;
+  div.querySelector(".media").value = media.toFixed(1);
 }
 
-/* ===== registra coordenada (GPS) ===== */
-function registrarCoordenada(btn) {
-  const display = btn.parentElement.querySelector('.coord-display');
-  if (!navigator.geolocation) { alert('Geolocalização não suportada'); return; }
+/* === GPS === */
+function registrarGPS(btn){
+  const box = btn.parentElement.querySelector(".coord-display");
   navigator.geolocation.getCurrentPosition(
-    pos => {
-      display.textContent = `Lat: ${pos.coords.latitude.toFixed(6)}, Lon: ${pos.coords.longitude.toFixed(6)}`;
-    },
-    err => { alert('Erro ao obter coordenada: ' + (err.message || err.code)); },
-    { enableHighAccuracy:true, timeout:10000 }
+    pos => box.textContent = `Lat: ${pos.coords.latitude.toFixed(6)}, Lon: ${pos.coords.longitude.toFixed(6)}`,
+    err => alert("Erro: "+err.message),
+    {enableHighAccuracy:true}
   );
 }
 
-/* ===== função que dispara input de fotos para captura ou seleção ===== */
-function triggerFoto(button, mode) {
-  // button is inside div.ponto; find the related input.fotos
-  const div = button.closest('.ponto');
-  if (!div) return;
-  const input = div.querySelector('.fotos');
-  if (!input) return;
-
-  // set or remove capture attribute
-  if (mode === 'capture') {
-    input.setAttribute('capture', 'environment'); // pede câmera traseira quando suportado
-  } else {
-    input.removeAttribute('capture');
+/* === Fotos === */
+function validarFotos(input){
+  if(input.files.length > 5){
+    alert("Máximo 5 fotos");
+    input.value="";
   }
-  // trigger click
-  input.click();
+  atualizarContagemFotos(input);
 }
 
-/* ===== valida fotos (limites) ===== */
-function validarFotos(input) {
-  const files = input.files;
-  if (!files) return;
-  if (files.length > 5) { alert('Máx 5 fotos por ponto'); input.value=''; updateFotoCount(input); return; }
-  for (const f of files) if (f.size > 10*1024*1024){ alert('Cada foto deve ter até 10MB'); input.value=''; updateFotoCount(input); return; }
-  updateFotoCount(input);
+function tirarFoto(btn){
+  const inp = btn.closest(".ponto").querySelector(".fotos");
+  inp.setAttribute("capture","environment");
+  inp.click();
 }
 
-/* atualiza contagem de fotos no UI (quando input muda) */
-function updateFotoCount(input) {
-  const div = input.closest('.ponto');
-  if (!div) return;
-  const display = div.querySelector('.foto-count');
-  const n = input.files ? input.files.length : 0;
-  display.textContent = `${n} foto${n===1?'':'s'} selecionada${n===1?'':'s'}`;
+function selecionarFoto(btn){
+  const inp = btn.closest(".ponto").querySelector(".fotos");
+  inp.removeAttribute("capture");
+  inp.click();
 }
 
-/* ===== coleta todas as médias (usada no cálculo de população) ===== */
-function coletarMedias() {
-  const pontos = Array.from(document.querySelectorAll('.ponto'));
-  return pontos.map(p => {
-    const m = parseFloat(p.querySelector('.media').value);
-    return isNaN(m) ? null : m;
-  });
+function atualizarContagemFotos(input){
+  const box = input.closest(".ponto").querySelector(".foto-count");
+  const qt = input.files.length;
+  box.textContent = `${qt} foto${qt===1?"":"s"}`;
 }
 
-/* ===== calcula população por ha ===== */
-function calcularPopulacao() {
-  const medias = coletarMedias();
-  if (medias.length === 0) { alert('Nenhum ponto criado'); return; }
-  if (medias.some(m=>m===null)) { alert('Preencha as contagens em todos os pontos antes de calcular'); return; }
-  const soma = medias.reduce((a,b)=>a+b,0);
-  const mediaGeral = soma / medias.length;
-  const esp_cm = parseFloat(document.getElementById('espacamento').value) || 45;
-  const esp_m = esp_cm / 100;
-  const popHa = mediaGeral * (10000 / esp_m);
-  document.getElementById('resultadoPopulacao').value = Math.round(popHa);
-  return popHa;
+/* === População === */
+function calcularPopulacao(){
+  const pontos = [...document.querySelectorAll(".media")];
+  const medias = pontos.map(x=>+x.value||0);
+  const esp = (+document.getElementById("espacamento").value)/100;
+  const mediaGeral = medias.reduce((a,b)=>a+b,0)/medias.length;
+  const pop = mediaGeral * (10000/esp);
+  document.getElementById("resultadoPopulacao").value = Math.round(pop);
 }
 
-/* ===== util: converte File -> DataURL (redimensiona via canvas mantendo proporção) ===== */
-function fileToDataURL(file, maxSide=1200) {
-  return new Promise((resolve,reject)=>{
-    const fr=new FileReader();
-    fr.onload = ()=> {
-      const img=new Image();
-      img.onload = ()=>{
-        let w=img.width, h=img.height;
-        if (Math.max(w,h) > maxSide) {
-          const ratio = maxSide / Math.max(w,h);
-          w = Math.round(w*ratio);
-          h = Math.round(h*ratio);
-        }
-        const c=document.createElement('canvas');
-        c.width=w; c.height=h;
-        const ctx=c.getContext('2d');
-        ctx.drawImage(img,0,0,w,h);
-        resolve(c.toDataURL('image/jpeg',0.85));
-      };
-      img.onerror = reject;
-      img.src = fr.result;
-    };
-    fr.onerror = reject;
-    fr.readAsDataURL(file);
-  });
-}
+/* === PDF === */
+async function gerarPDF(){
+  const {jsPDF} = window.jspdf;
+  const doc = new jsPDF();
+  let y=10;
 
-/* util: dataURL -> Image object */
-function dataUrlToImage(dataUrl) {
-  return new Promise((resolve,reject)=>{
-    const img = new Image();
-    img.onload = ()=> resolve(img);
-    img.onerror = reject;
-    img.src = dataUrl;
-  });
-}
+  doc.text("Relatório de Estande - Soja",10,y); y+=10;
 
-/* ===== gera PDF (média já com 1 casa decimal; inclui contagens; imagens com proporção) ===== */
-async function gerarPDF() {
-  // checar jsPDF
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert('jsPDF não carregado. Conecte-se à internet ou gere JSON offline.');
-    return;
-  }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p','mm','a4');
-  let y=12;
-  doc.setFontSize(14);
-  doc.text('Relatório - Controle de Estande (Soja)', 14, y); y+=8;
-  doc.setFontSize(10);
-  doc.text(`Responsável: ${document.getElementById('responsavel').value || '-'}`, 14, y); y+=6;
-  doc.text(`Talhão: ${document.getElementById('talhao').value || '-'}`, 14, y); y+=6;
-  doc.text(`Área (ha): ${document.getElementById('area').value || '-'}`, 14, y); y+=8;
-  doc.text(`Espaçamento (cm): ${document.getElementById('espacamento').value || '45'}`, 14, y); y+=10;
+  doc.text("Responsável: "+(document.getElementById("responsavel").value||"-"),10,y); y+=6;
+  doc.text("Talhão: "+(document.getElementById("talhao").value||"-"),10,y); y+=6;
+  doc.text("Área: "+(document.getElementById("area").value||"-")+" ha",10,y); y+=10;
 
-  const pontos = Array.from(document.querySelectorAll('.ponto'));
-  for (let idx=0; idx<pontos.length; idx++){
-    const p = pontos[idx];
-    doc.setFontSize(12);
-    doc.text(`Ponto ${idx+1}`, 14, y); y+=6;
+  const pontos = [...document.querySelectorAll(".ponto")];
 
-    // Fase fenológica
-    const fase = p.querySelector('.fase').value || '-';
-    doc.setFontSize(10);
-    doc.text(`Fase fenológica: ${fase}`, 14, y); y+=6;
+  for(let i=0;i<pontos.length;i++){
+    const p = pontos[i];
+    doc.text(`Ponto ${i+1}`,10,y); y+=8;
 
-    // contagens das 5 linhas
-    const l1 = p.querySelector('.l1').value || '0';
-    const l2 = p.querySelector('.l2').value || '0';
-    const l3 = p.querySelector('.l3').value || '0';
-    const l4 = p.querySelector('.l4').value || '0';
-    const l5 = p.querySelector('.l5').value || '0';
+    doc.text("Fase: "+(p.querySelector(".fase").value||"-"),10,y); y+=6;
 
-    doc.text(`Linha 1: ${l1}`, 14, y); y+=5;
-    doc.text(`Linha 2: ${l2}`, 14, y); y+=5;
-    doc.text(`Linha 3: ${l3}`, 14, y); y+=5;
-    doc.text(`Linha 4: ${l4}`, 14, y); y+=5;
-    doc.text(`Linha 5: ${l5}`, 14, y); y+=7;
+    doc.text("L1: "+p.querySelector(".l1").value,10,y); y+=5;
+    doc.text("L2: "+p.querySelector(".l2").value,10,y); y+=5;
+    doc.text("L3: "+p.querySelector(".l3").value,10,y); y+=5;
+    doc.text("L4: "+p.querySelector(".l4").value,10,y); y+=5;
+    doc.text("L5: "+p.querySelector(".l5").value,10,y); y+=8;
 
-    // média com 1 casa decimal (já mostrada no site)
-    const mediaStr = p.querySelector('.media').value || '0.0';
-    doc.text(`Média (pl/m): ${parseFloat(mediaStr).toFixed(1)}`, 14, y); y+=7;
+    doc.text("Média: "+p.querySelector(".media").value,10,y); y+=6;
 
-    // coordenada
-    const coord = p.querySelector('.coord-display').textContent || 'Não registrada';
-    doc.text(`Coordenadas: ${coord}`, 14, y); y+=7;
+    const coord = p.querySelector(".coord-display").textContent||"Não registrada";
+    doc.text("Coord.: "+coord,10,y); y+=6;
 
-    // observações
-    const obsDan = p.querySelector('.obs-dan').value || '-';
-    const obsPrag = p.querySelector('.obs-prag').value || '-';
-    doc.text(`Daninhas: ${truncateForPdf(obsDan)}`, 14, y); y+=6;
-    doc.text(`Pragas/Doenças: ${truncateForPdf(obsPrag)}`, 14, y); y+=6;
+    doc.text("Daninhas: "+p.querySelector(".obs-dan").value,10,y); y+=6;
+    doc.text("Pragas: "+p.querySelector(".obs-prag").value,10,y); y+=6;
 
-    // nódulos principal / secundárias
-    const nodP = p.querySelector('.nod-principal').value || '-';
-    const nodS = p.querySelector('.nod-secundarias').value || '-';
-    doc.text(`Nódulos - Raiz Principal: ${truncateForPdf(nodP)}`, 14, y); y+=6;
-    doc.text(`Nódulos - Raízes Secundárias: ${truncateForPdf(nodS)}`, 14, y); y+=8;
+    doc.text("Nódulos (Principal): "+p.querySelector(".nod-principal").value,10,y); y+=6;
+    doc.text("Nódulos (Secundárias): "+p.querySelector(".nod-secundarias").value,10,y); y+=10;
 
-    // fotos: adicionar mantendo proporção
-    const inputFotos = p.querySelector('.fotos');
-    if (inputFotos && inputFotos.files && inputFotos.files.length) {
-      for (let f of inputFotos.files) {
-        try {
-          const dataUrl = await fileToDataURL(f, 1200); // já redimensiona mantendo proporção
-          const img = await dataUrlToImage(dataUrl);
-          const maxW = 180; // mm on page
-          const maxH = 120;
-          // convert px->mm: assume 96 dpi: mm = px * 25.4 / 96
-          const pxToMm = px => (px * 25.4) / 96;
-          let wmm = pxToMm(img.width);
-          let hmm = pxToMm(img.height);
-          const ratio = Math.min(maxW / wmm, maxH / hmm, 1);
-          wmm = wmm * ratio;
-          hmm = hmm * ratio;
-          if (y + hmm > 285) { doc.addPage(); y = 12; }
-          doc.addImage(dataUrl, 'JPEG', 14, y, wmm, hmm);
-          y += hmm + 8;
-        } catch(e){
-          console.error('Erro imagem PDF', e);
-        }
-        if (y > 270) { doc.addPage(); y = 12; }
-      }
-    }
-
-    if (y > 260) { doc.addPage(); y = 12; }
+    if(y>260){doc.addPage(); y=10;}
   }
 
-  // salva
-  const nome = `relatorio_estande_${(document.getElementById('talhao').value || 'sem_talhao')}_${(new Date()).toISOString().slice(0,10)}.pdf`;
-  doc.save(nome);
+  doc.save("relatorio_estande.pdf");
 }
 
-/* util para truncar strings longas no PDF */
-function truncateForPdf(str, max=120) {
-  if (!str) return '-';
-  return (str.length > max) ? (str.slice(0,max) + '...') : str;
-}
-
-/* ===== registrar service worker (se existir) ===== */
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker?.register('service-worker.js')
-    .then(()=> console.log('Service Worker registrado'))
-    .catch(e=> console.warn('Falha SW:', e));
+/* === PWA Auto Update === */
+if("serviceWorker" in navigator){
+  navigator.serviceWorker.register("service-worker.js");
 }
 </script>
 </body>
